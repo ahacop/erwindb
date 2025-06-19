@@ -1,0 +1,7 @@
+dist/
+debug.log
+erwindb
+node_modules
+.claude/
+.env
+models/

@@ -1,0 +1,40 @@
+name: Distribution Check
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
+          - os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: extractions/setup-just@v3
+
+      - name: Install dependencies
+        run: just install
+
+      - name: Build distribution
+        run: just dist
+
+      - name: Run check
+        run: |
+          cd dist/erwindb-*/
+          ./erwindb --check
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: erwindb-${{ matrix.os }}
+          path: dist/*.tar.gz
