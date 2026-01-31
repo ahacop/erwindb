@@ -3,7 +3,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::Paragraph,
+    widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };
 
@@ -27,6 +27,11 @@ pub fn draw_index(frame: &mut Frame, app: &App) {
     draw_column_headers(frame, app, chunks[1]);
     draw_question_list(frame, app, chunks[2]);
     draw_status_bar(frame, app, chunks[3]);
+
+    // Draw semantic search modal on top if active
+    if app.search_mode == SearchMode::Semantic {
+        draw_semantic_modal(frame, app, size);
+    }
 }
 
 fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
@@ -35,11 +40,8 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
             styles::search_title_style(),
             format!(" /{}\u{2588}", app.search_input),
         ),
-        SearchMode::Semantic => (
-            styles::search_semantic_style(),
-            format!(" ? {}\u{2588}", app.search_input),
-        ),
-        SearchMode::None => {
+        // Semantic search uses a modal, so show normal header
+        SearchMode::Semantic | SearchMode::None => {
             let count_text = if let Some(ref matches) = app.fuzzy_matches {
                 format!(
                     " ErwinDB ({}/{} matching \"{}\") ",
@@ -66,6 +68,67 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         style,
     )]));
     frame.render_widget(header, area);
+}
+
+fn draw_semantic_modal(frame: &mut Frame, app: &App, area: Rect) {
+    // Modal dimensions: border + input + hint + border = 4 lines minimum
+    let modal_width = 60.min(area.width.saturating_sub(4));
+    let modal_height = 5;
+
+    // Center the modal
+    let x = (area.width.saturating_sub(modal_width)) / 2;
+    let y = (area.height.saturating_sub(modal_height)) / 2;
+
+    let modal_area = Rect::new(x, y, modal_width, modal_height);
+
+    // Clear the area behind the modal
+    frame.render_widget(Clear, modal_area);
+
+    // Draw modal border
+    let block = Block::default()
+        .title(" Semantic Search ")
+        .title_style(
+            Style::default()
+                .fg(Color::Magenta)
+                .add_modifier(Modifier::BOLD),
+        )
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Magenta));
+
+    frame.render_widget(block, modal_area);
+
+    // Input prompt and cursor (y+1 is first row inside border)
+    let input_area = Rect::new(
+        modal_area.x + 2,
+        modal_area.y + 1,
+        modal_area.width.saturating_sub(4),
+        1,
+    );
+
+    let prompt = "> ";
+    let cursor = "\u{2588}";
+    let input_text = format!("{}{}{}", prompt, app.search_input, cursor);
+    let input = Paragraph::new(Line::from(vec![Span::styled(
+        input_text,
+        Style::default().fg(Color::White),
+    )]));
+
+    frame.render_widget(input, input_area);
+
+    // Hint text below input (y+2 = second row inside border)
+    let hint_area = Rect::new(
+        modal_area.x + 2,
+        modal_area.y + 3,
+        modal_area.width.saturating_sub(4),
+        1,
+    );
+
+    let hint = Paragraph::new(Line::from(vec![Span::styled(
+        "Enter to search · Esc to cancel",
+        Style::default().fg(Color::DarkGray),
+    )]));
+
+    frame.render_widget(hint, hint_area);
 }
 
 fn draw_column_headers(frame: &mut Frame, app: &App, area: Rect) {

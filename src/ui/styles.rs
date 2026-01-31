@@ -39,6 +39,7 @@ pub fn search_title_style() -> Style {
         .add_modifier(Modifier::BOLD)
 }
 
+#[allow(dead_code)]
 pub fn search_semantic_style() -> Style {
     Style::default()
         .bg(Color::Magenta)
