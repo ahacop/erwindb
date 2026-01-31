@@ -3,6 +3,13 @@ name = "erwindb"
 version = "0.1.0"
 edition = "2021"
 description = "TUI for browsing Erwin Brandstetter's Stack Overflow Q&A"
+license = "MIT"
+repository = "https://github.com/ahacop/erwindb"
+homepage = "https://github.com/ahacop/erwindb"
+readme = "README.md"
+authors = ["Ara Hacopian <ara@hacopian.de>"]
+keywords = ["tui", "stackoverflow", "postgresql", "database", "cli"]
+categories = ["command-line-utilities", "database"]
 
 [dependencies]
 # TUI framework
