@@ -244,6 +244,12 @@ fn draw_question_list(frame: &mut Frame, app: &App, area: Rect) {
                 Style::default().fg(Color::DarkGray)
             };
 
+            let dim_style = if is_selected {
+                base_style
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+
             let score_style = if q.score > 0 {
                 if is_selected {
                     base_style
@@ -282,9 +288,9 @@ fn draw_question_list(frame: &mut Frame, app: &App, area: Rect) {
             let mut spans = vec![
                 Span::styled(selector.to_string(), selector_style),
                 Span::styled(format!("{} ", id_str), id_style),
-                Span::styled(format!("{} ", date_str), base_style),
+                Span::styled(format!("{} ", date_str), dim_style),
                 Span::styled(format!("{} ", score_str), score_style),
-                Span::styled(format!("{} ", views_str), base_style),
+                Span::styled(format!("{} ", views_str), dim_style),
                 Span::styled(format!("{} ", answers_str), answers_style),
             ];
             spans.extend(title_spans);
