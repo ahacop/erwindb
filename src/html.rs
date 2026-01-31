@@ -1,14 +1,23 @@
-use crate::highlight::{detect_language, highlight_code};
+use crate::highlight::highlight_code;
 use ratatui::text::{Line, Span};
 use regex::Regex;
 use scraper::{Html, Selector};
 use std::sync::LazyLock;
 
-static CODE_BLOCK_SELECTOR: LazyLock<Selector> =
-    LazyLock::new(|| Selector::parse("pre > code, pre").unwrap());
+static PRE_SELECTOR: LazyLock<Selector> = LazyLock::new(|| Selector::parse("pre").unwrap());
+static LANG_CLASS_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"lang-(\w+)").unwrap());
 #[allow(dead_code)]
 static SO_QUESTION_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"stackoverflow\.com/(?:questions|q)/(\d+)").unwrap());
+
+/// Extract language hint from a <pre> tag's class attribute (e.g., "lang-sql prettyprint-override")
+fn extract_lang_from_class(class: Option<&str>) -> Option<String> {
+    class
+        .and_then(|c| LANG_CLASS_REGEX.captures(c))
+        .and_then(|cap| cap.get(1))
+        .map(|m| m.as_str().to_string())
+        .filter(|l| l != "none") // lang-none means no highlighting
+}
 
 #[derive(Debug, Clone)]
 pub struct ContentLine {
@@ -28,14 +37,15 @@ pub fn html_to_content(html: &str, width: usize) -> ParsedContent {
     let document = Html::parse_fragment(html);
     let mut lines = Vec::new();
 
-    // Extract code blocks first
-    let mut code_blocks: Vec<String> = Vec::new();
+    // Extract code blocks with language hints from <pre> tags
+    let mut code_blocks: Vec<(String, Option<String>)> = Vec::new();
     let mut processed_html = html.to_string();
 
-    for element in document.select(&CODE_BLOCK_SELECTOR) {
+    for element in document.select(&PRE_SELECTOR) {
         let code = element.text().collect::<String>();
+        let lang = extract_lang_from_class(element.value().attr("class"));
         let placeholder = format!("__CODE_BLOCK_{}__", code_blocks.len());
-        code_blocks.push(code);
+        code_blocks.push((code, lang));
         processed_html = processed_html.replace(&element.html(), &placeholder);
     }
 
@@ -47,9 +57,8 @@ pub fn html_to_content(html: &str, width: usize) -> ParsedContent {
         // Check for code block placeholder
         if let Some(code_idx) = parse_code_placeholder(line) {
             if code_idx < code_blocks.len() {
-                let code = &code_blocks[code_idx];
-                let lang = detect_language(code);
-                let highlighted = highlight_code(code, lang);
+                let (code, lang) = &code_blocks[code_idx];
+                let highlighted = highlight_code(code, lang.as_deref());
 
                 for code_line in highlighted {
                     let mut indented_spans = vec![Span::raw("    ".to_string())];

@@ -1182,6 +1182,68 @@ class InteractiveStackOverflowScraper {
       console.log("🔒 Database connection closed.");
     }
   }
+
+  // Fetch a single question with markdown body and output to stdout
+  async fetchQuestionMarkdown(questionId: number): Promise<void> {
+    // Filter created via: /filters/create?include=question.body_markdown;answer.body_markdown&base=withbody&unsafe=true
+    // Includes all withbody fields plus body_markdown for both questions and answers
+    const filter = "Fxi3hOm7pos5bKsCDUuYC9U9w3gG.Q8RoyGG)H";
+
+    try {
+      console.error(`🔄 Fetching question ${questionId} with markdown body...`);
+
+      const questionData = await this.fetchWithRetry(
+        `https://api.stackexchange.com/2.3/questions/${questionId}?site=stackoverflow&filter=${filter}${API_KEY_PARAM}`,
+      );
+
+      if (!questionData.items || questionData.items.length === 0) {
+        console.error(`❌ No question data found for ID ${questionId}`);
+        return;
+      }
+
+      const question = questionData.items[0];
+
+      // Output to stdout as structured text
+      console.log(`# ${question.title}\n`);
+      console.log(`**Question ID:** ${questionId}`);
+      console.log(`**Tags:** ${(question.tags || []).join(", ")}`);
+      console.log(`**Score:** ${question.score || 0}`);
+      console.log(`**Views:** ${question.view_count || 0}`);
+      console.log("");
+      console.log("---");
+      console.log("");
+      console.log("## Question\n");
+      console.log(question.body_markdown || question.body || "(no body)");
+
+      // Fetch answers with markdown
+      await sleep(1000);
+
+      const answersData = await this.fetchWithRetry(
+        `https://api.stackexchange.com/2.3/questions/${questionId}/answers?site=stackoverflow&filter=${filter}&pagesize=100${API_KEY_PARAM}`,
+      );
+
+      const answers = answersData.items || [];
+      if (answers.length > 0) {
+        console.log("");
+        console.log("---");
+        console.log("");
+        console.log(`## Answers (${answers.length})\n`);
+
+        for (const answer of answers) {
+          const accepted = answer.is_accepted ? " ✓ ACCEPTED" : "";
+          const authorName = answer.owner?.display_name || "Unknown";
+          console.log(`### Answer by ${authorName}${accepted}`);
+          console.log(`**Score:** ${answer.score || 0}\n`);
+          console.log(answer.body_markdown || answer.body || "(no body)");
+          console.log("");
+        }
+      }
+
+      console.error(`✅ Done`);
+    } catch (err) {
+      console.error(`❌ Error: ${err instanceof Error ? err.message : err}`);
+    }
+  }
 }
 
 // Create a global instance for interactive use
@@ -1281,6 +1343,10 @@ export async function reembed(limit?: number | "all") {
 
 export function embedStats() {
   scraper.getEmbeddingStats();
+}
+
+export async function fetchMd(questionId: number) {
+  await scraper.fetchQuestionMarkdown(questionId);
 }
 
 export async function semanticSearch(query: string, limit = 10) {
@@ -1389,6 +1455,7 @@ Commands:
   reembed [limit|all]     Regenerate embeddings for N or all question titles
   embedStats              Show embedding coverage statistics
   semanticSearch <query>  Search questions using semantic similarity (default: 10 results)
+  fetchMd <id>            Fetch a question with markdown body and output to stdout
 
 Examples:
   deno run --allow-net --allow-read --allow-write scraper.ts scrapeNext 10
@@ -1523,6 +1590,16 @@ Examples:
       }
       const limit = 10; // Default to 10 results
       await semanticSearch(query, limit);
+      break;
+    }
+
+    case "fetchMd": {
+      const id = parseInt(args[1]);
+      if (!id) {
+        console.error("❌ Please provide a question ID");
+        Deno.exit(1);
+      }
+      await fetchMd(id);
       break;
     }
 
