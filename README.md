@@ -6,6 +6,10 @@ A TUI for browsing [Erwin Brandstetter's](https://stackoverflow.com/users/939860
 
 Erwin Brandstetter is a PostgreSQL consultant based in Vienna, Austria with 670k+ reputation and nearly 7,000 answers on Stack Overflow. His answers are an invaluable resource for anyone working with PostgreSQL.
 
+## Why This Exists
+
+![Stack Overflow Q&A count over time](docs/stackoverflow-decline.jpg)
+
 ## Features
 
 - Browse questions where Erwin Brandstetter has answered
