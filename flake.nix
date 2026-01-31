@@ -1,5 +1,5 @@
 {
-  description = "Rust development environment";
+  description = "TUI for browsing Erwin Brandstetter's Stack Overflow Q&A";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -13,6 +13,35 @@
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
+      packages = forAllSystems (system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          default = pkgs.rustPlatform.buildRustPackage {
+            pname = "erwindb";
+            version = "0.1.0";
+            src = ./.;
+            cargoLock.lockFile = ./Cargo.lock;
+
+            nativeBuildInputs = [ pkgs.pkg-config ];
+            buildInputs = [ pkgs.openssl pkgs.onnxruntime ]
+              ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
+
+            env.ORT_LIB_LOCATION = "${pkgs.onnxruntime}";
+
+            meta = {
+              description = "TUI for browsing Erwin Brandstetter's Stack Overflow Q&A";
+              homepage = "https://github.com/ahacop/erwindb";
+              license = pkgs.lib.licenses.gpl3Plus;
+              mainProgram = "erwindb";
+            };
+          };
+        });
+
       devShells = forAllSystems (system:
         let
           pkgs = import nixpkgs {

@@ -1,5 +1,5 @@
 .env
 /target/
-Cargo.lock
 .direnv/
 .fastembed_cache/
+result
