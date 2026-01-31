@@ -22,6 +22,7 @@ pub const CODE_BG: Color = Color::Rgb(40, 44, 52);
 pub const POSITIVE_SCORE: Color = Color::Green;
 #[allow(dead_code)]
 pub const ACCEPTED_ANSWER: Color = Color::Green;
+#[allow(dead_code)]
 pub const COMMENT_FG: Color = Color::Gray;
 pub const SEPARATOR_FG: Color = Color::DarkGray;
 
@@ -108,8 +109,19 @@ pub fn separator_style() -> Style {
     Style::default().fg(SEPARATOR_FG)
 }
 
+#[allow(dead_code)]
 pub fn comment_style() -> Style {
     Style::default().fg(COMMENT_FG).add_modifier(Modifier::BOLD)
+}
+
+pub fn comment_header_style() -> Style {
+    Style::default()
+        .fg(Color::DarkGray)
+        .add_modifier(Modifier::BOLD)
+}
+
+pub fn comment_text_style() -> Style {
+    Style::default().fg(Color::Rgb(180, 170, 150)) // Light tan/beige
 }
 
 #[allow(dead_code)]

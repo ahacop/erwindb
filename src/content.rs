@@ -2,18 +2,20 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
 use crate::db::{Answer, Comment, Question};
-use crate::html::{decode_html_entities, html_to_content, is_erwin, strip_html_tags};
+use crate::html::{decode_html_entities, html_to_content, is_erwin, strip_html_tags, Link};
 use crate::ui::styles;
 
 /// Pre-rendered content for the show page
 pub struct RenderedContent {
     pub lines: Vec<Line<'static>>,
     pub erwin_positions: Vec<usize>,
+    pub links: Vec<Link>,
 }
 
 /// Pre-rendered content for the Erwin pane
 pub struct RenderedErwinContent {
     pub lines: Vec<Line<'static>>,
+    pub links: Vec<Link>,
 }
 
 pub fn build_question_content(
@@ -27,6 +29,7 @@ pub fn build_question_content(
     let content_width = width.saturating_sub(4);
     let mut lines: Vec<Line<'static>> = Vec::new();
     let mut erwin_positions: Vec<usize> = Vec::new();
+    let mut all_links: Vec<Link> = Vec::new();
 
     // Title
     let title = decode_html_entities(&question.title);
@@ -66,8 +69,14 @@ pub fn build_question_content(
     lines.push(Line::from(""));
 
     let body_content = html_to_content(&question.body, content_width);
+    let link_offset = lines.len();
     for content_line in body_content.lines {
         lines.push(content_line.line);
+    }
+    // Adjust link line indices and add to collection
+    for mut link in body_content.links {
+        link.line_index += link_offset;
+        all_links.push(link);
     }
 
     // Question comments
@@ -75,7 +84,7 @@ pub fn build_question_content(
         lines.push(Line::from(""));
         lines.push(Line::from(Span::styled(
             format!("Comments ({})", question_comments.len()),
-            styles::comment_style(),
+            styles::comment_header_style(),
         )));
 
         for comment in question_comments {
@@ -91,7 +100,7 @@ pub fn build_question_content(
                     "    {}{} \u{2014} {}",
                     vote_str, comment_text, comment.author_name
                 ),
-                Style::default().fg(Color::DarkGray),
+                styles::comment_text_style(),
             )));
         }
     }
@@ -171,6 +180,7 @@ pub fn build_question_content(
 
         // Answer body
         let answer_content = html_to_content(&answer.answer_text, content_width);
+        let answer_link_offset = lines.len();
         for content_line in answer_content.lines {
             if author_is_erwin {
                 let mut spans = vec![Span::styled("\u{2502} ", styles::erwin_accent_style())];
@@ -180,6 +190,11 @@ pub fn build_question_content(
                 lines.push(content_line.line);
             }
         }
+        // Adjust link line indices and add to collection
+        for mut link in answer_content.links {
+            link.line_index += answer_link_offset;
+            all_links.push(link);
+        }
 
         // Answer comments
         let comments = answer_comments.get(i).map(|c| c.as_slice()).unwrap_or(&[]);
@@ -187,7 +202,7 @@ pub fn build_question_content(
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
                 format!("Comments ({})", comments.len()),
-                styles::comment_style(),
+                styles::comment_header_style(),
             )));
 
             for comment in comments {
@@ -204,7 +219,7 @@ pub fn build_question_content(
                 let style = if comment_is_erwin {
                     Style::default().fg(Color::Yellow)
                 } else {
-                    Style::default().fg(Color::DarkGray)
+                    styles::comment_text_style()
                 };
 
                 lines.push(Line::from(Span::styled(
@@ -227,6 +242,7 @@ pub fn build_question_content(
     RenderedContent {
         lines,
         erwin_positions,
+        links: all_links,
     }
 }
 
@@ -237,6 +253,7 @@ pub fn build_erwin_content(
 ) -> RenderedErwinContent {
     let content_width = width.saturating_sub(6);
     let mut lines: Vec<Line<'static>> = Vec::new();
+    let mut all_links: Vec<Link> = Vec::new();
 
     // Answer header
     let accepted_mark = if answer.is_accepted {
@@ -269,8 +286,14 @@ pub fn build_erwin_content(
 
     // Answer body
     let answer_content = html_to_content(&answer.answer_text, content_width);
+    let link_offset = lines.len();
     for content_line in answer_content.lines {
         lines.push(content_line.line);
+    }
+    // Adjust link line indices and add to collection
+    for mut link in answer_content.links {
+        link.line_index += link_offset;
+        all_links.push(link);
     }
 
     // Answer comments
@@ -278,7 +301,7 @@ pub fn build_erwin_content(
         lines.push(Line::from(""));
         lines.push(Line::from(Span::styled(
             format!("Comments ({})", comments.len()),
-            styles::comment_style(),
+            styles::comment_header_style(),
         )));
 
         for comment in comments {
@@ -295,7 +318,7 @@ pub fn build_erwin_content(
             let style = if comment_is_erwin {
                 Style::default().fg(Color::Yellow)
             } else {
-                Style::default().fg(Color::DarkGray)
+                styles::comment_text_style()
             };
 
             lines.push(Line::from(Span::styled(
@@ -308,7 +331,10 @@ pub fn build_erwin_content(
         }
     }
 
-    RenderedErwinContent { lines }
+    RenderedErwinContent {
+        lines,
+        links: all_links,
+    }
 }
 
 fn format_date(timestamp: i64) -> String {

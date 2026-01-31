@@ -4,7 +4,7 @@ use ratatui::text::Line;
 
 use crate::content::{build_erwin_content, build_question_content};
 use crate::db::{Answer, Comment, Database, Question};
-use crate::html::is_erwin;
+use crate::html::{is_erwin, Link};
 use crate::search::fuzzy::{fuzzy_filter, FuzzyMatch};
 use crate::search::semantic::SemanticSearch;
 
@@ -75,6 +75,8 @@ pub struct App {
     pub rendered_erwin_content: Vec<Line<'static>>,
     pub erwin_answer_positions: Vec<usize>,
     pub rendered_width: u16,
+    pub content_links: Vec<Link>,
+    pub erwin_links: Vec<Link>,
 
     // History stack for back navigation
     pub history: Vec<i64>,
@@ -126,6 +128,8 @@ impl App {
             rendered_erwin_content: Vec::new(),
             erwin_answer_positions: Vec::new(),
             rendered_width: 0,
+            content_links: Vec::new(),
+            erwin_links: Vec::new(),
 
             history: Vec::new(),
         })
@@ -283,10 +287,19 @@ impl App {
 
     fn handle_show_key(&mut self, key: KeyEvent) {
         match key.code {
-            KeyCode::Char('q') | KeyCode::Char('b') | KeyCode::Esc => {
+            KeyCode::Esc => {
+                // Clear focused link first, then go back
+                if self.focused_link_index.is_some() {
+                    self.focused_link_index = None;
+                } else {
+                    self.go_back();
+                }
+            }
+            KeyCode::Char('q') | KeyCode::Char('b') => {
                 self.go_back();
             }
             KeyCode::Char('j') | KeyCode::Down => {
+                self.focused_link_index = None;
                 if self.erwin_pane_visible && !self.left_pane_focused {
                     self.erwin_scroll_offset += 1;
                 } else {
@@ -294,6 +307,7 @@ impl App {
                 }
             }
             KeyCode::Char('k') | KeyCode::Up => {
+                self.focused_link_index = None;
                 if self.erwin_pane_visible && !self.left_pane_focused {
                     self.erwin_scroll_offset = self.erwin_scroll_offset.saturating_sub(1);
                 } else {
@@ -301,6 +315,7 @@ impl App {
                 }
             }
             KeyCode::Char(' ') | KeyCode::Char('d') => {
+                self.focused_link_index = None;
                 let page = self.height.saturating_sub(2) as usize;
                 if self.erwin_pane_visible && !self.left_pane_focused {
                     self.erwin_scroll_offset += page;
@@ -309,6 +324,7 @@ impl App {
                 }
             }
             KeyCode::Char('u') => {
+                self.focused_link_index = None;
                 let page = self.height.saturating_sub(2) as usize;
                 if self.erwin_pane_visible && !self.left_pane_focused {
                     self.erwin_scroll_offset = self.erwin_scroll_offset.saturating_sub(page);
@@ -317,6 +333,7 @@ impl App {
                 }
             }
             KeyCode::Char('g') => {
+                self.focused_link_index = None;
                 if self.erwin_pane_visible && !self.left_pane_focused {
                     self.erwin_scroll_offset = 0;
                 } else {
@@ -324,6 +341,7 @@ impl App {
                 }
             }
             KeyCode::Char('G') => {
+                self.focused_link_index = None;
                 // Scroll to end - will be clamped in view
                 if self.erwin_pane_visible && !self.left_pane_focused {
                     self.erwin_scroll_offset = usize::MAX / 2;
@@ -332,6 +350,7 @@ impl App {
                 }
             }
             KeyCode::Char('e') => {
+                self.focused_link_index = None;
                 let erwin_count = self.erwin_answer_count();
                 if erwin_count > 0 {
                     if self.width >= 160 {
@@ -363,6 +382,7 @@ impl App {
                 }
             }
             KeyCode::Char('E') => {
+                self.focused_link_index = None;
                 let erwin_count = self.erwin_answer_count();
                 if erwin_count > 0 {
                     if self.width >= 160 && self.erwin_pane_visible {
@@ -390,17 +410,29 @@ impl App {
                 }
             }
             KeyCode::Char('o') => {
-                let url = format!(
-                    "https://stackoverflow.com/questions/{}",
-                    self.current_question_id
-                );
-                let _ = open::that(url);
+                // If a link is focused, open that; otherwise open the question
+                if let Some(link) = self.get_focused_link().cloned() {
+                    // If it's a SO question we have locally, navigate to it
+                    if let Some(qid) = link.question_id {
+                        if self.questions.iter().any(|q| q.id == qid) {
+                            self.navigate_to_question(qid);
+                            return;
+                        }
+                    }
+                    let _ = open::that(&link.url);
+                } else {
+                    let url = format!(
+                        "https://stackoverflow.com/questions/{}",
+                        self.current_question_id
+                    );
+                    let _ = open::that(url);
+                }
             }
             KeyCode::Tab => {
-                // TODO: Cycle through links
+                self.cycle_link(true);
             }
             KeyCode::BackTab => {
-                // TODO: Cycle through links (reverse)
+                self.cycle_link(false);
             }
             _ => {}
         }
@@ -500,6 +532,7 @@ impl App {
             );
             self.rendered_content = content.lines;
             self.erwin_answer_positions = content.erwin_positions;
+            self.content_links = content.links;
             self.rendered_width = self.width;
         }
     }
@@ -516,6 +549,7 @@ impl App {
 
             let content = build_erwin_content(answer, comments, self.width as usize / 2);
             self.rendered_erwin_content = content.lines;
+            self.erwin_links = content.links;
         }
     }
 
@@ -582,5 +616,64 @@ impl App {
             .iter()
             .filter(|a| is_erwin(&a.author_name))
             .nth(self.erwin_answer_index)
+    }
+
+    fn cycle_link(&mut self, forward: bool) {
+        // Determine which link collection and scroll offset to use
+        let (links, scroll_offset) = if self.erwin_pane_visible && !self.left_pane_focused {
+            (&self.erwin_links, &mut self.erwin_scroll_offset)
+        } else {
+            (&self.content_links, &mut self.scroll_offset)
+        };
+
+        if links.is_empty() {
+            return;
+        }
+
+        // Calculate next link index
+        let new_index = match self.focused_link_index {
+            Some(current) => {
+                if forward {
+                    if current + 1 >= links.len() {
+                        0
+                    } else {
+                        current + 1
+                    }
+                } else if current == 0 {
+                    links.len() - 1
+                } else {
+                    current - 1
+                }
+            }
+            None => {
+                if forward {
+                    0
+                } else {
+                    links.len() - 1
+                }
+            }
+        };
+
+        self.focused_link_index = Some(new_index);
+
+        // Scroll to make the link visible
+        if let Some(link) = links.get(new_index) {
+            let visible_height = self.height.saturating_sub(2) as usize;
+            if link.line_index < *scroll_offset {
+                *scroll_offset = link.line_index;
+            } else if link.line_index >= *scroll_offset + visible_height {
+                *scroll_offset = link.line_index.saturating_sub(visible_height / 2);
+            }
+        }
+    }
+
+    pub fn get_focused_link(&self) -> Option<&Link> {
+        let links = if self.erwin_pane_visible && !self.left_pane_focused {
+            &self.erwin_links
+        } else {
+            &self.content_links
+        };
+
+        self.focused_link_index.and_then(|idx| links.get(idx))
     }
 }
