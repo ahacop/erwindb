@@ -5,6 +5,38 @@ use crate::db::{Answer, Comment, Question};
 use crate::html::{decode_html_entities, html_to_content, is_erwin, strip_html_tags, Link};
 use crate::ui::styles;
 
+/// Maximum content width for readability on wide screens
+const MAX_CONTENT_WIDTH: usize = 90;
+
+/// Wrap text to a specified width at word boundaries
+fn wrap_text(text: &str, width: usize, indent: &str) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current_line = String::new();
+    let effective_width = width.saturating_sub(indent.len());
+
+    for word in text.split_whitespace() {
+        if current_line.is_empty() {
+            current_line = word.to_string();
+        } else if current_line.len() + 1 + word.len() <= effective_width {
+            current_line.push(' ');
+            current_line.push_str(word);
+        } else {
+            lines.push(format!("{}{}", indent, current_line));
+            current_line = word.to_string();
+        }
+    }
+
+    if !current_line.is_empty() {
+        lines.push(format!("{}{}", indent, current_line));
+    }
+
+    if lines.is_empty() {
+        lines.push(indent.to_string());
+    }
+
+    lines
+}
+
 /// Pre-rendered content for the show page
 pub struct RenderedContent {
     pub lines: Vec<Line<'static>>,
@@ -26,7 +58,7 @@ pub fn build_question_content(
     width: usize,
     hide_erwin: bool,
 ) -> RenderedContent {
-    let content_width = width.saturating_sub(4);
+    let content_width = width.saturating_sub(4).min(MAX_CONTENT_WIDTH);
     let mut lines: Vec<Line<'static>> = Vec::new();
     let mut erwin_positions: Vec<usize> = Vec::new();
     let mut all_links: Vec<Link> = Vec::new();
@@ -95,13 +127,16 @@ pub fn build_question_content(
                 String::new()
             };
             let comment_text = strip_html_tags(&comment.comment_text);
-            lines.push(Line::from(Span::styled(
-                format!(
-                    "    {}{} \u{2014} {}",
-                    vote_str, comment_text, comment.author_name
-                ),
-                styles::comment_text_style(),
-            )));
+            let full_text = format!(
+                "{}{} \u{2014} {}",
+                vote_str, comment_text, comment.author_name
+            );
+            for wrapped_line in wrap_text(&full_text, content_width, "    ") {
+                lines.push(Line::from(Span::styled(
+                    wrapped_line,
+                    styles::comment_text_style(),
+                )));
+            }
         }
     }
 
@@ -222,13 +257,13 @@ pub fn build_question_content(
                     styles::comment_text_style()
                 };
 
-                lines.push(Line::from(Span::styled(
-                    format!(
-                        "    {}{}{} \u{2014} {}",
-                        erwin_mark, vote_str, comment_text, comment.author_name
-                    ),
-                    style,
-                )));
+                let full_text = format!(
+                    "{}{}{} \u{2014} {}",
+                    erwin_mark, vote_str, comment_text, comment.author_name
+                );
+                for wrapped_line in wrap_text(&full_text, content_width, "    ") {
+                    lines.push(Line::from(Span::styled(wrapped_line, style)));
+                }
             }
         }
     }
@@ -251,7 +286,7 @@ pub fn build_erwin_content(
     comments: &[Comment],
     width: usize,
 ) -> RenderedErwinContent {
-    let content_width = width.saturating_sub(6);
+    let content_width = width.saturating_sub(6).min(MAX_CONTENT_WIDTH);
     let mut lines: Vec<Line<'static>> = Vec::new();
     let mut all_links: Vec<Link> = Vec::new();
 
@@ -321,13 +356,13 @@ pub fn build_erwin_content(
                 styles::comment_text_style()
             };
 
-            lines.push(Line::from(Span::styled(
-                format!(
-                    "    {}{}{} \u{2014} {}",
-                    erwin_mark, vote_str, comment_text, comment.author_name
-                ),
-                style,
-            )));
+            let full_text = format!(
+                "{}{}{} \u{2014} {}",
+                erwin_mark, vote_str, comment_text, comment.author_name
+            );
+            for wrapped_line in wrap_text(&full_text, content_width, "    ") {
+                lines.push(Line::from(Span::styled(wrapped_line, style)));
+            }
         }
     }
 
