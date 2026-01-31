@@ -359,6 +359,7 @@ impl App {
                             self.erwin_pane_visible = true;
                             self.left_pane_focused = false;
                             self.erwin_scroll_offset = 0;
+                            self.rebuild_content(); // Hide Erwin from left pane
                             self.rebuild_erwin_content();
                         } else if self.left_pane_focused {
                             self.left_pane_focused = false;
@@ -367,6 +368,7 @@ impl App {
                             if self.erwin_answer_index == 0 {
                                 self.erwin_pane_visible = false;
                                 self.left_pane_focused = true;
+                                self.rebuild_content(); // Show Erwin in left pane again
                             }
                             self.erwin_scroll_offset = 0;
                             self.rebuild_erwin_content();
@@ -394,6 +396,7 @@ impl App {
                             self.rebuild_erwin_content();
                         } else {
                             self.erwin_pane_visible = false;
+                            self.rebuild_content(); // Show Erwin in left pane again
                         }
                     } else if self.width < 160 {
                         // Narrow terminal: go to previous Erwin answer
