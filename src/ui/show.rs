@@ -22,8 +22,14 @@ pub fn draw_show(frame: &mut Frame, app: &mut App) {
         ])
         .split(size);
 
+    // Add 1 space left margin to content only
+    let content_with_margin = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(1), Constraint::Min(1)])
+        .split(chunks[1]);
+
     draw_header(frame, app, chunks[0], can_split);
-    draw_content(frame, app, chunks[1], can_split);
+    draw_content(frame, app, content_with_margin[1], can_split);
     draw_status_bar(frame, app, chunks[2], can_split);
 }
 
