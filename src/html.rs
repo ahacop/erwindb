@@ -49,8 +49,8 @@ pub fn html_to_content(html: &str, width: usize) -> ParsedContent {
         processed_html = processed_html.replace(&element.html(), &placeholder);
     }
 
-    // Convert HTML to plain text
-    let text = simple_html_to_text(&processed_html);
+    // Convert HTML to plain text using html2text
+    let text = html2text::from_read(processed_html.as_bytes(), width).unwrap_or_default();
 
     // Process each line
     for line in text.lines() {
@@ -73,15 +73,11 @@ pub fn html_to_content(html: &str, width: usize) -> ParsedContent {
                 }
             }
         } else {
-            // Regular text line - wrap to width
-            let wrapped = wrap_text(line, width);
-            for wrapped_line in wrapped {
-                lines.push(ContentLine {
-                    line: Line::from(wrapped_line),
-                    link_url: None,
-                    link_question_id: None,
-                });
-            }
+            lines.push(ContentLine {
+                line: Line::from(line.to_string()),
+                link_url: None,
+                link_question_id: None,
+            });
         }
     }
 
@@ -97,104 +93,6 @@ fn parse_code_placeholder(line: &str) -> Option<usize> {
     }
 }
 
-fn simple_html_to_text(html: &str) -> String {
-    // Simple HTML to text conversion
-    let mut text = html.to_string();
-
-    // Replace common block elements with newlines
-    text = Regex::new(r"<br\s*/?>")
-        .unwrap()
-        .replace_all(&text, "\n")
-        .to_string();
-    text = Regex::new(r"</p>")
-        .unwrap()
-        .replace_all(&text, "\n\n")
-        .to_string();
-    text = Regex::new(r"</div>")
-        .unwrap()
-        .replace_all(&text, "\n")
-        .to_string();
-    text = Regex::new(r"</h[1-6]>")
-        .unwrap()
-        .replace_all(&text, "\n\n")
-        .to_string();
-    text = Regex::new(r"<li[^>]*>")
-        .unwrap()
-        .replace_all(&text, "\n  - ")
-        .to_string();
-    text = Regex::new(r"</li>")
-        .unwrap()
-        .replace_all(&text, "")
-        .to_string();
-
-    // Remove all remaining HTML tags
-    text = Regex::new(r"<[^>]+>")
-        .unwrap()
-        .replace_all(&text, "")
-        .to_string();
-
-    // Decode HTML entities
-    text = decode_html_entities(&text);
-
-    // Normalize whitespace but preserve paragraph breaks
-    let lines: Vec<&str> = text.lines().collect();
-    let mut result = Vec::new();
-    let mut prev_empty = false;
-
-    for line in lines {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            if !prev_empty {
-                result.push("");
-                prev_empty = true;
-            }
-        } else {
-            result.push(trimmed);
-            prev_empty = false;
-        }
-    }
-
-    result.join("\n")
-}
-
-fn wrap_text(text: &str, width: usize) -> Vec<String> {
-    if text.is_empty() {
-        return vec![String::new()];
-    }
-
-    let mut lines = Vec::new();
-    let mut current_line = String::new();
-    let mut current_width = 0;
-
-    for word in text.split_whitespace() {
-        let word_width = unicode_width::UnicodeWidthStr::width(word);
-
-        if current_width + word_width + 1 > width && !current_line.is_empty() {
-            lines.push(current_line);
-            current_line = String::new();
-            current_width = 0;
-        }
-
-        if !current_line.is_empty() {
-            current_line.push(' ');
-            current_width += 1;
-        }
-
-        current_line.push_str(word);
-        current_width += word_width;
-    }
-
-    if !current_line.is_empty() {
-        lines.push(current_line);
-    }
-
-    if lines.is_empty() {
-        lines.push(String::new());
-    }
-
-    lines
-}
-
 pub fn decode_html_entities(text: &str) -> String {
     text.replace("&lt;", "<")
         .replace("&gt;", ">")
@@ -204,6 +102,19 @@ pub fn decode_html_entities(text: &str) -> String {
         .replace("&nbsp;", " ")
         .replace("&#x27;", "'")
         .replace("&#x2F;", "/")
+}
+
+/// Strip HTML tags from text (for comments and other inline content)
+pub fn strip_html_tags(html: &str) -> String {
+    // Use html2text with a large width to avoid wrapping
+    html2text::from_read(html.as_bytes(), 10000)
+        .unwrap_or_default()
+        .lines()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 #[allow(dead_code)]

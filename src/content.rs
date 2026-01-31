@@ -2,7 +2,7 @@ use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
 use crate::db::{Answer, Comment, Question};
-use crate::html::{decode_html_entities, html_to_content, is_erwin};
+use crate::html::{decode_html_entities, html_to_content, is_erwin, strip_html_tags};
 use crate::ui::styles;
 
 /// Pre-rendered content for the show page
@@ -85,7 +85,7 @@ pub fn build_question_content(
             } else {
                 String::new()
             };
-            let comment_text = decode_html_entities(&comment.comment_text);
+            let comment_text = strip_html_tags(&comment.comment_text);
             lines.push(Line::from(Span::styled(
                 format!(
                     "    {}{} \u{2014} {}",
@@ -199,7 +199,7 @@ pub fn build_question_content(
                     String::new()
                 };
                 let erwin_mark = if comment_is_erwin { "\u{25c6} " } else { "" };
-                let comment_text = decode_html_entities(&comment.comment_text);
+                let comment_text = strip_html_tags(&comment.comment_text);
 
                 let style = if comment_is_erwin {
                     Style::default().fg(Color::Yellow)
@@ -290,7 +290,7 @@ pub fn build_erwin_content(
                 String::new()
             };
             let erwin_mark = if comment_is_erwin { "\u{25c6} " } else { "" };
-            let comment_text = decode_html_entities(&comment.comment_text);
+            let comment_text = strip_html_tags(&comment.comment_text);
 
             let style = if comment_is_erwin {
                 Style::default().fg(Color::Yellow)
