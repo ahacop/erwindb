@@ -1,0 +1,51 @@
+[package]
+name = "erwindb"
+version = "0.1.0"
+edition = "2021"
+description = "TUI for browsing Erwin Brandstetter's Stack Overflow Q&A"
+
+[dependencies]
+# TUI framework
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled", "load_extension"] }
+
+# Fuzzy search
+nucleo = "0.5"
+
+# Syntax highlighting
+syntect = { version = "5.2", default-features = false, features = ["default-fancy"] }
+
+# HTML parsing
+scraper = "0.21"
+
+# Semantic search (ONNX runtime) - optional, can be enabled later
+# ort = { version = "2.0.0-rc.11", default-features = false, features = ["load-dynamic"] }
+ndarray = "0.16"
+# tokenizers = { version = "0.20", default-features = false, features = ["onig"] }
+
+# Async runtime
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "macros"] }
+
+# Date formatting
+chrono = "0.4"
+
+# Open URLs in browser
+open = "5.3"
+
+# Error handling
+anyhow = "1.0"
+
+# Unicode width calculation
+unicode-width = "0.2"
+
+# Regex for HTML parsing
+regex = "1.10"
+
+# Lazy static initialization
+once_cell = "1.19"
+
+# Tree traversal for HTML
+ego-tree = "0.9"
