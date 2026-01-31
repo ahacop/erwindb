@@ -93,15 +93,36 @@ fn simple_html_to_text(html: &str) -> String {
     let mut text = html.to_string();
 
     // Replace common block elements with newlines
-    text = Regex::new(r"<br\s*/?>").unwrap().replace_all(&text, "\n").to_string();
-    text = Regex::new(r"</p>").unwrap().replace_all(&text, "\n\n").to_string();
-    text = Regex::new(r"</div>").unwrap().replace_all(&text, "\n").to_string();
-    text = Regex::new(r"</h[1-6]>").unwrap().replace_all(&text, "\n\n").to_string();
-    text = Regex::new(r"<li[^>]*>").unwrap().replace_all(&text, "\n  - ").to_string();
-    text = Regex::new(r"</li>").unwrap().replace_all(&text, "").to_string();
+    text = Regex::new(r"<br\s*/?>")
+        .unwrap()
+        .replace_all(&text, "\n")
+        .to_string();
+    text = Regex::new(r"</p>")
+        .unwrap()
+        .replace_all(&text, "\n\n")
+        .to_string();
+    text = Regex::new(r"</div>")
+        .unwrap()
+        .replace_all(&text, "\n")
+        .to_string();
+    text = Regex::new(r"</h[1-6]>")
+        .unwrap()
+        .replace_all(&text, "\n\n")
+        .to_string();
+    text = Regex::new(r"<li[^>]*>")
+        .unwrap()
+        .replace_all(&text, "\n  - ")
+        .to_string();
+    text = Regex::new(r"</li>")
+        .unwrap()
+        .replace_all(&text, "")
+        .to_string();
 
     // Remove all remaining HTML tags
-    text = Regex::new(r"<[^>]+>").unwrap().replace_all(&text, "").to_string();
+    text = Regex::new(r"<[^>]+>")
+        .unwrap()
+        .replace_all(&text, "")
+        .to_string();
 
     // Decode HTML entities
     text = decode_html_entities(&text);

@@ -1,14 +1,14 @@
 use chrono::{TimeZone, Utc};
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::Paragraph,
+    Frame,
 };
 
-use crate::app::{App, SearchMode, SortColumn, SortDirection};
 use super::styles;
+use crate::app::{App, SearchMode, SortColumn, SortDirection};
 
 pub fn draw_index(frame: &mut Frame, app: &App) {
     let size = frame.area();
@@ -61,9 +61,10 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         }
     };
 
-    let header = Paragraph::new(Line::from(vec![
-        Span::styled(format!("{:<width$}", text, width = area.width as usize), style),
-    ]));
+    let header = Paragraph::new(Line::from(vec![Span::styled(
+        format!("{:<width$}", text, width = area.width as usize),
+        style,
+    )]));
     frame.render_widget(header, area);
 }
 
@@ -83,27 +84,39 @@ fn draw_column_headers(frame: &mut Frame, app: &App, area: Rect) {
         Span::styled("   ", Style::default().fg(Color::DarkGray)),
         Span::styled(
             format!("{:>7}{} ", "ID", get_indicator(SortColumn::Id)),
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!("{:<12}{} ", "Date", get_indicator(SortColumn::Date)),
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!("{:>5}{} ", "Score", get_indicator(SortColumn::Score)),
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!("{:>6}{} ", "Views", get_indicator(SortColumn::Views)),
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             format!("{:>3}{} ", "A", get_indicator(SortColumn::Answers)),
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
         ),
         Span::styled(
             "Title".to_string(),
-            Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
         ),
     ]);
 
@@ -140,13 +153,18 @@ fn draw_question_list(frame: &mut Frame, app: &App, area: Rect) {
             let answers_str = format!("{:>4}", q.answer_count);
 
             let title = if q.title.len() > title_width {
-                format!("{}...", &q.title[..title_width.saturating_sub(3).min(q.title.len())])
+                format!(
+                    "{}...",
+                    &q.title[..title_width.saturating_sub(3).min(q.title.len())]
+                )
             } else {
                 q.title.clone()
             };
 
             let base_style = if is_selected {
-                Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
@@ -294,7 +312,9 @@ fn highlight_fuzzy_match(text: &str, indices: &[u32], base_style: Style) -> Vec<
         }
         spans.push(Span::styled(
             chars[idx].to_string(),
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         ));
         last_end = idx + 1;
     }

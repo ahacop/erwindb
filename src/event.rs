@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossterm::event::{self, KeyEvent, KeyEventKind, Event as CrosstermEvent};
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind};
 use std::time::Duration;
 
 pub enum Event {

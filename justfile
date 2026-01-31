@@ -25,7 +25,7 @@ lint:
     cargo clippy
 
 # Scraper commands (run from root dir)
-deno := "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi"
+deno := "deno run --allow-net --allow-read --allow-write --allow-env --allow-ffi --allow-sys"
 scraper := "scraper/scraper.ts"
 
 # Show database statistics

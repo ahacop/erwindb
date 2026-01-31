@@ -1,13 +1,13 @@
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Wrap},
+    Frame,
 };
 
-use crate::app::App;
 use super::styles;
+use crate::app::App;
 
 pub fn draw_show(frame: &mut Frame, app: &mut App) {
     let size = frame.area();
@@ -42,13 +42,19 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
         );
 
         let left_style = if app.left_pane_focused {
-            Style::default().bg(Color::Cyan).fg(Color::Black).add_modifier(Modifier::BOLD)
+            Style::default()
+                .bg(Color::Cyan)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD)
         } else {
             styles::header_style()
         };
 
         let right_style = if !app.left_pane_focused {
-            Style::default().bg(Color::Yellow).fg(Color::Black).add_modifier(Modifier::BOLD)
+            Style::default()
+                .bg(Color::Yellow)
+                .fg(Color::Black)
+                .add_modifier(Modifier::BOLD)
         } else {
             styles::header_style()
         };
@@ -64,7 +70,12 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
                 left_style,
             ),
             Span::styled(
-                format!("{}{}{}", right_title, " ".repeat(right_padding), attribution),
+                format!(
+                    "{}{}{}",
+                    right_title,
+                    " ".repeat(right_padding),
+                    attribution
+                ),
                 right_style,
             ),
         ]);

@@ -26,15 +26,24 @@ pub const COMMENT_FG: Color = Color::Gray;
 pub const SEPARATOR_FG: Color = Color::DarkGray;
 
 pub fn header_style() -> Style {
-    Style::default().bg(HEADER_BG).fg(HEADER_FG).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(HEADER_BG)
+        .fg(HEADER_FG)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn search_title_style() -> Style {
-    Style::default().bg(Color::Yellow).fg(Color::Black).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(Color::Yellow)
+        .fg(Color::Black)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn search_semantic_style() -> Style {
-    Style::default().bg(Color::Magenta).fg(Color::White).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(Color::Magenta)
+        .fg(Color::White)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn status_style() -> Style {
@@ -42,11 +51,17 @@ pub fn status_style() -> Style {
 }
 
 pub fn selected_style() -> Style {
-    Style::default().bg(SELECTED_BG).fg(SELECTED_FG).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(SELECTED_BG)
+        .fg(SELECTED_FG)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn erwin_header_style() -> Style {
-    Style::default().bg(ERWIN_BG).fg(ERWIN_FG).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(ERWIN_BG)
+        .fg(ERWIN_FG)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn erwin_accent_style() -> Style {
@@ -63,20 +78,29 @@ pub fn title_style() -> Style {
 
 #[allow(dead_code)]
 pub fn link_style() -> Style {
-    Style::default().fg(LINK_FG).add_modifier(Modifier::UNDERLINED)
+    Style::default()
+        .fg(LINK_FG)
+        .add_modifier(Modifier::UNDERLINED)
 }
 
 #[allow(dead_code)]
 pub fn focused_link_style() -> Style {
-    Style::default().bg(LINK_FG).fg(Color::Black).add_modifier(Modifier::BOLD)
+    Style::default()
+        .bg(LINK_FG)
+        .fg(Color::Black)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn answer_header_style() -> Style {
-    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+    Style::default()
+        .fg(Color::Green)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn question_header_style() -> Style {
-    Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD)
+    Style::default()
+        .fg(Color::Magenta)
+        .add_modifier(Modifier::BOLD)
 }
 
 pub fn separator_style() -> Style {

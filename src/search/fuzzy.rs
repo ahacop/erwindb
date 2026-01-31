@@ -1,4 +1,7 @@
-use nucleo::{Config, Matcher, Utf32Str, pattern::{Atom, AtomKind, CaseMatching, Normalization}};
+use nucleo::{
+    pattern::{Atom, AtomKind, CaseMatching, Normalization},
+    Config, Matcher, Utf32Str,
+};
 
 pub struct FuzzyMatcher {
     matcher: Matcher,
@@ -17,7 +20,13 @@ impl FuzzyMatcher {
             return Some(0);
         }
 
-        let atom = Atom::new(pattern, CaseMatching::Ignore, Normalization::Smart, AtomKind::Fuzzy, false);
+        let atom = Atom::new(
+            pattern,
+            CaseMatching::Ignore,
+            Normalization::Smart,
+            AtomKind::Fuzzy,
+            false,
+        );
         let mut buf = Vec::new();
         let haystack = Utf32Str::new(text, &mut buf);
 
@@ -29,7 +38,13 @@ impl FuzzyMatcher {
             return None;
         }
 
-        let atom = Atom::new(pattern, CaseMatching::Ignore, Normalization::Smart, AtomKind::Fuzzy, false);
+        let atom = Atom::new(
+            pattern,
+            CaseMatching::Ignore,
+            Normalization::Smart,
+            AtomKind::Fuzzy,
+            false,
+        );
         let mut buf = Vec::new();
         let haystack = Utf32Str::new(text, &mut buf);
 
@@ -53,11 +68,7 @@ pub struct FuzzyMatch {
     pub match_indices: Vec<u32>,
 }
 
-pub fn fuzzy_filter<T, F>(
-    items: &[T],
-    pattern: &str,
-    get_text: F,
-) -> Vec<FuzzyMatch>
+pub fn fuzzy_filter<T, F>(items: &[T], pattern: &str, get_text: F) -> Vec<FuzzyMatch>
 where
     F: Fn(&T) -> &str,
 {
@@ -71,11 +82,13 @@ where
         .enumerate()
         .filter_map(|(index, item)| {
             let text = get_text(item);
-            matcher.match_indices(pattern, text).map(|(score, indices)| FuzzyMatch {
-                index,
-                score,
-                match_indices: indices,
-            })
+            matcher
+                .match_indices(pattern, text)
+                .map(|(score, indices)| FuzzyMatch {
+                    index,
+                    score,
+                    match_indices: indices,
+                })
         })
         .collect();
 

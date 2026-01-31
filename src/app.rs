@@ -6,6 +6,7 @@ use crate::content::{build_erwin_content, build_question_content};
 use crate::db::{Answer, Comment, Database, Question};
 use crate::html::is_erwin;
 use crate::search::fuzzy::{fuzzy_filter, FuzzyMatch};
+use crate::search::semantic::SemanticSearch;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortColumn {
@@ -38,6 +39,7 @@ pub enum SearchMode {
 pub struct App {
     pub should_quit: bool,
     pub db: Database,
+    pub semantic: Option<SemanticSearch>,
     pub questions: Vec<Question>,
     pub page: Page,
 
@@ -83,9 +85,16 @@ impl App {
         let db = Database::open("sqlite.db")?;
         let questions = db.get_questions()?;
 
+        // Initialize semantic search (may fail if model can't be loaded)
+        if !std::path::Path::new(".fastembed_cache").exists() {
+            eprintln!("First run: downloading embedding model (~50MB)...");
+        }
+        let semantic = SemanticSearch::new().ok();
+
         Ok(Self {
             should_quit: false,
             db,
+            semantic,
             questions,
             page: Page::Index,
 
@@ -152,8 +161,7 @@ impl App {
                 }
                 KeyCode::Enter => {
                     if self.search_mode == SearchMode::Semantic && !self.search_input.is_empty() {
-                        // TODO: Trigger semantic search
-                        self.semantic_loading = true;
+                        self.perform_semantic_search();
                     }
                     self.search_mode = SearchMode::None;
                 }
@@ -347,7 +355,8 @@ impl App {
                     } else {
                         // Narrow terminal: cycle to next Erwin answer and scroll to it
                         self.erwin_answer_index = (self.erwin_answer_index + 1) % erwin_count;
-                        if let Some(&pos) = self.erwin_answer_positions.get(self.erwin_answer_index) {
+                        if let Some(&pos) = self.erwin_answer_positions.get(self.erwin_answer_index)
+                        {
                             self.scroll_offset = pos;
                         }
                     }
@@ -373,7 +382,8 @@ impl App {
                         } else {
                             self.erwin_answer_index - 1
                         };
-                        if let Some(&pos) = self.erwin_answer_positions.get(self.erwin_answer_index) {
+                        if let Some(&pos) = self.erwin_answer_positions.get(self.erwin_answer_index)
+                        {
                             self.scroll_offset = pos;
                         }
                     }
@@ -406,6 +416,32 @@ impl App {
         self.selected_index = 0;
     }
 
+    fn perform_semantic_search(&mut self) {
+        if self.search_input.is_empty() {
+            self.semantic_results = None;
+            return;
+        }
+
+        let Some(ref semantic) = self.semantic else {
+            return;
+        };
+
+        // Generate embedding for query
+        let Ok(embedding) = semantic.embed(&self.search_input) else {
+            return;
+        };
+
+        // Search database for similar questions (by title)
+        let Ok(results) = self.db.semantic_search(&embedding, 20) else {
+            return;
+        };
+
+        // Extract question IDs directly - no deduplication or re-ranking needed
+        let question_ids: Vec<i64> = results.into_iter().map(|r| r.question_id).collect();
+        self.semantic_results = Some(question_ids);
+        self.selected_index = 0;
+    }
+
     fn toggle_sort(&mut self, column: SortColumn) {
         if self.sort_column == column {
             self.sort_direction = match self.sort_direction {
@@ -427,7 +463,10 @@ impl App {
         self.current_question_id = question_id;
         self.current_question = self.db.get_question(question_id).ok().flatten();
         self.current_answers = self.db.get_answers(question_id).unwrap_or_default();
-        self.current_comments = self.db.get_question_comments(question_id).unwrap_or_default();
+        self.current_comments = self
+            .db
+            .get_question_comments(question_id)
+            .unwrap_or_default();
 
         // Pre-fetch all answer comments
         self.answer_comments = self
@@ -501,10 +540,7 @@ impl App {
 
     pub fn get_sorted_questions(&self) -> Vec<&Question> {
         if let Some(ref matches) = self.fuzzy_matches {
-            matches
-                .iter()
-                .map(|m| &self.questions[m.index])
-                .collect()
+            matches.iter().map(|m| &self.questions[m.index]).collect()
         } else if let Some(ref ids) = self.semantic_results {
             ids.iter()
                 .filter_map(|id| self.questions.iter().find(|q| q.id == *id))
@@ -529,7 +565,9 @@ impl App {
     }
 
     pub fn get_selected_question(&self) -> Option<&Question> {
-        self.get_sorted_questions().get(self.selected_index).copied()
+        self.get_sorted_questions()
+            .get(self.selected_index)
+            .copied()
     }
 
     pub fn erwin_answer_count(&self) -> usize {

@@ -58,17 +58,24 @@ pub fn detect_language(code: &str) -> Option<&'static str> {
     }
 
     // JavaScript/TypeScript
-    if code.contains("const ") || code.contains("let ") || code.contains("function ") || code.contains("=>") {
+    if code.contains("const ")
+        || code.contains("let ")
+        || code.contains("function ")
+        || code.contains("=>")
+    {
         return Some("javascript");
     }
 
     // Python
-    if code.contains("def ") || code.contains("import ") || code.contains("class ") && code.contains(":") {
+    if code.contains("def ")
+        || code.contains("import ")
+        || code.contains("class ") && code.contains(":")
+    {
         return Some("python");
     }
 
     // Bash/Shell
-    if code.starts_with("#!/") || code.contains("echo ") || code.contains("$(" ) {
+    if code.starts_with("#!/") || code.contains("echo ") || code.contains("$(") {
         return Some("bash");
     }
 

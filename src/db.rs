@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::ffi::sqlite3_auto_extension;
+use rusqlite::{params, Connection, OptionalExtension};
+use sqlite_vec::sqlite3_vec_init;
 use std::path::Path;
 
 #[derive(Debug, Clone)]
@@ -35,10 +37,9 @@ pub struct Comment {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct SemanticResult {
-    pub answer_id: i64,
     pub question_id: i64,
+    #[allow(dead_code)]
     pub distance: f32,
 }
 
@@ -48,31 +49,12 @@ pub struct Database {
 
 impl Database {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let conn = Connection::open(path).context("Failed to open database")?;
-
-        // Try to load sqlite-vec extension
-        // First try the local lib/ directory, then system paths
-        let extension_paths = [
-            "lib/vec0",
-            "/usr/lib/sqlite3/vec0",
-            "/usr/local/lib/sqlite3/vec0",
-        ];
-
-        let mut loaded = false;
+        // Register sqlite-vec extension before opening connection
         unsafe {
-            conn.load_extension_enable()?;
-            for path in &extension_paths {
-                if conn.load_extension(path, None).is_ok() {
-                    loaded = true;
-                    break;
-                }
-            }
-            conn.load_extension_disable()?;
+            sqlite3_auto_extension(Some(std::mem::transmute(sqlite3_vec_init as *const ())));
         }
 
-        if !loaded {
-            eprintln!("Warning: sqlite-vec extension not found. Semantic search will be unavailable.");
-        }
+        let conn = Connection::open(path).context("Failed to open database")?;
 
         Ok(Self { conn })
     }
@@ -201,18 +183,20 @@ impl Database {
             .is_ok()
     }
 
-    #[allow(dead_code)]
-    pub fn semantic_search(&self, query_embedding: &[f32], limit: usize) -> Result<Vec<SemanticResult>> {
+    pub fn semantic_search(
+        &self,
+        query_embedding: &[f32],
+        limit: usize,
+    ) -> Result<Vec<SemanticResult>> {
         let blob: Vec<u8> = query_embedding
             .iter()
             .flat_map(|f| f.to_le_bytes())
             .collect();
 
         let mut stmt = self.conn.prepare(
-            "SELECT ae.answer_id, a.question_id,
-                    vec_distance_cosine(ae.embedding, ?) as distance
-             FROM answer_embeddings ae
-             JOIN answers a ON ae.answer_id = a.id
+            "SELECT qe.question_id,
+                    vec_distance_cosine(qe.embedding, ?) as distance
+             FROM question_embeddings qe
              ORDER BY distance ASC
              LIMIT ?",
         )?;
@@ -220,9 +204,8 @@ impl Database {
         let results = stmt
             .query_map(params![blob, limit as i64], |row| {
                 Ok(SemanticResult {
-                    answer_id: row.get(0)?,
-                    question_id: row.get(1)?,
-                    distance: row.get(2)?,
+                    question_id: row.get(0)?,
+                    distance: row.get(1)?,
                 })
             })?
             .collect::<std::result::Result<Vec<_>, _>>()?;

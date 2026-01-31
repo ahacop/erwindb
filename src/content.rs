@@ -59,7 +59,10 @@ pub fn build_question_content(
     lines.push(Line::from(""));
 
     // Question body
-    lines.push(Line::from(Span::styled("QUESTION", styles::question_header_style())));
+    lines.push(Line::from(Span::styled(
+        "QUESTION",
+        styles::question_header_style(),
+    )));
     lines.push(Line::from(""));
 
     let body_content = html_to_content(&question.body, content_width);
@@ -84,7 +87,10 @@ pub fn build_question_content(
             };
             let comment_text = decode_html_entities(&comment.comment_text);
             lines.push(Line::from(Span::styled(
-                format!("    {}{} \u{2014} {}", vote_str, comment_text, comment.author_name),
+                format!(
+                    "    {}{} \u{2014} {}",
+                    vote_str, comment_text, comment.author_name
+                ),
                 Style::default().fg(Color::DarkGray),
             )));
         }
@@ -112,7 +118,11 @@ pub fn build_question_content(
         }
 
         // Answer header
-        let accepted_mark = if answer.is_accepted { " \u{2713} ACCEPTED" } else { "" };
+        let accepted_mark = if answer.is_accepted {
+            " \u{2713} ACCEPTED"
+        } else {
+            ""
+        };
         let score_str = if answer.score > 0 {
             format!("+{}", answer.score)
         } else {
@@ -125,12 +135,20 @@ pub fn build_question_content(
                 Span::styled(" \u{25c6} ", styles::erwin_header_style()),
                 Span::styled(
                     format!("ANSWER {}{}  ({} votes)", i + 1, accepted_mark, score_str),
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
                 ),
             ]));
         } else {
             lines.push(Line::from(Span::styled(
-                format!("ANSWER {}{}{}  ({} votes)", i + 1, accepted_mark, erwin_mark, score_str),
+                format!(
+                    "ANSWER {}{}{}  ({} votes)",
+                    i + 1,
+                    accepted_mark,
+                    erwin_mark,
+                    score_str
+                ),
                 styles::answer_header_style(),
             )));
         }
@@ -142,7 +160,11 @@ pub fn build_question_content(
         };
 
         lines.push(Line::from(Span::styled(
-            format!("by {} ({} rep)", answer.author_name, format_number(answer.author_reputation)),
+            format!(
+                "by {} ({} rep)",
+                answer.author_name,
+                format_number(answer.author_reputation)
+            ),
             author_style,
         )));
         lines.push(Line::from(""));
@@ -186,7 +208,10 @@ pub fn build_question_content(
                 };
 
                 lines.push(Line::from(Span::styled(
-                    format!("    {}{}{} \u{2014} {}", erwin_mark, vote_str, comment_text, comment.author_name),
+                    format!(
+                        "    {}{}{} \u{2014} {}",
+                        erwin_mark, vote_str, comment_text, comment.author_name
+                    ),
                     style,
                 )));
             }
@@ -199,7 +224,10 @@ pub fn build_question_content(
         styles::separator_style(),
     )));
 
-    RenderedContent { lines, erwin_positions }
+    RenderedContent {
+        lines,
+        erwin_positions,
+    }
 }
 
 pub fn build_erwin_content(
@@ -211,7 +239,11 @@ pub fn build_erwin_content(
     let mut lines: Vec<Line<'static>> = Vec::new();
 
     // Answer header
-    let accepted_mark = if answer.is_accepted { " \u{2713} ACCEPTED" } else { "" };
+    let accepted_mark = if answer.is_accepted {
+        " \u{2713} ACCEPTED"
+    } else {
+        ""
+    };
     let score_str = if answer.score > 0 {
         format!("+{}", answer.score)
     } else {
@@ -220,11 +252,17 @@ pub fn build_erwin_content(
 
     lines.push(Line::from(Span::styled(
         format!("ANSWER{}  ({} votes)", accepted_mark, score_str),
-        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
     )));
 
     lines.push(Line::from(Span::styled(
-        format!("by {} ({} rep)", answer.author_name, format_number(answer.author_reputation)),
+        format!(
+            "by {} ({} rep)",
+            answer.author_name,
+            format_number(answer.author_reputation)
+        ),
         styles::erwin_text_style(),
     )));
     lines.push(Line::from(""));
@@ -261,7 +299,10 @@ pub fn build_erwin_content(
             };
 
             lines.push(Line::from(Span::styled(
-                format!("    {}{}{} \u{2014} {}", erwin_mark, vote_str, comment_text, comment.author_name),
+                format!(
+                    "    {}{}{} \u{2014} {}",
+                    erwin_mark, vote_str, comment_text, comment.author_name
+                ),
                 style,
             )));
         }

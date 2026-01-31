@@ -114,11 +114,11 @@ class InteractiveStackOverflowScraper {
     `);
 
     this.db.execute(`
-      CREATE TABLE IF NOT EXISTS answer_embeddings (
-        answer_id INTEGER PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS question_embeddings (
+        question_id INTEGER PRIMARY KEY,
         embedding BLOB NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (answer_id) REFERENCES answers (id)
+        FOREIGN KEY (question_id) REFERENCES questions (id)
       )
     `);
 
@@ -974,57 +974,57 @@ class InteractiveStackOverflowScraper {
     }
   }
 
-  // Get unembedded answers
-  getUnembeddedAnswers(limit = 50): { id: number; answer_text: string }[] {
+  // Get unembedded questions
+  getUnembeddedQuestions(limit = 50): { id: number; title: string }[] {
     if (!this.db) {
       console.log("❌ Database not initialized.");
       return [];
     }
 
     const result = this.query(
-      `SELECT id, answer_text FROM answers
-       WHERE id NOT IN (SELECT answer_id FROM answer_embeddings)
+      `SELECT id, title FROM questions
+       WHERE id NOT IN (SELECT question_id FROM question_embeddings)
        LIMIT ?`,
       [limit],
     );
 
     return result.map((row: any) => ({
       id: row.id,
-      answer_text: row.answer_text,
+      title: row.title,
     }));
   }
 
-  // Embed next batch of answers
+  // Embed next batch of questions
   async embedNextBatch(count: number | "all" = 50) {
     // If "all", get total count first for progress
     if (count === "all") {
       const totalUnembedded = Number(
         this.query(
-          "SELECT COUNT(*) as count FROM answers WHERE id NOT IN (SELECT answer_id FROM answer_embeddings)"
+          "SELECT COUNT(*) as count FROM questions WHERE id NOT IN (SELECT question_id FROM question_embeddings)"
         )[0]?.count || 0
       );
 
       if (totalUnembedded === 0) {
-        console.log("🎉 All answers have embeddings!");
+        console.log("🎉 All questions have embeddings!");
         return;
       }
 
-      console.log(`🤖 Embedding all ${totalUnembedded} unembedded answers...`);
+      console.log(`🤖 Embedding all ${totalUnembedded} unembedded questions...`);
 
-      // Get all unembedded answers at once for accurate progress
-      const allUnembedded = this.getUnembeddedAnswers(totalUnembedded);
+      // Get all unembedded questions at once for accurate progress
+      const allUnembedded = this.getUnembeddedQuestions(totalUnembedded);
       await this.embedBatch(allUnembedded);
       return;
     }
 
-    const unembedded = this.getUnembeddedAnswers(count);
+    const unembedded = this.getUnembeddedQuestions(count);
 
     if (unembedded.length === 0) {
-      console.log("🎉 All answers have embeddings!");
+      console.log("🎉 All questions have embeddings!");
       return;
     }
 
-    console.log(`🤖 Embedding ${unembedded.length} answers...`);
+    console.log(`🤖 Embedding ${unembedded.length} questions...`);
     await this.embedBatch(unembedded);
   }
 
@@ -1037,18 +1037,18 @@ class InteractiveStackOverflowScraper {
     return `[${bar}] ${current}/${total} (${(pct * 100).toFixed(0)}%)`;
   }
 
-  // Helper method to embed a batch of answers
-  private async embedBatch(answers: { id: number; answer_text: string }[]) {
+  // Helper method to embed a batch of questions
+  private async embedBatch(questions: { id: number; title: string }[]) {
     const { batchGenerateEmbeddings, serializeEmbedding } = await loadEmbeddings();
-    const total = answers.length;
+    const total = questions.length;
     let completed = 0;
 
     // Process in batches of 20 for DB transactions
     const batchSize = 20;
-    for (let i = 0; i < answers.length; i += batchSize) {
-      const batch = answers.slice(i, i + batchSize);
+    for (let i = 0; i < questions.length; i += batchSize) {
+      const batch = questions.slice(i, i + batchSize);
 
-      const texts = batch.map((a) => a.answer_text);
+      const texts = batch.map((q) => q.title);
       const embeddings = await batchGenerateEmbeddings(texts, (current: number) => {
         const overall = completed + current;
         const status = this.progressBar(overall, total);
@@ -1060,13 +1060,13 @@ class InteractiveStackOverflowScraper {
         this.db.execute("BEGIN TRANSACTION");
         try {
           for (let j = 0; j < batch.length; j++) {
-            const answerId = batch[j].id;
+            const questionId = batch[j].id;
             const embedding = embeddings[j];
             const blob = serializeEmbedding(embedding);
 
             this.db.query(
-              "INSERT OR REPLACE INTO answer_embeddings (answer_id, embedding) VALUES (?, ?)",
-              [answerId, blob],
+              "INSERT OR REPLACE INTO question_embeddings (question_id, embedding) VALUES (?, ?)",
+              [questionId, blob],
             );
           }
           this.db.execute("COMMIT");
@@ -1078,33 +1078,33 @@ class InteractiveStackOverflowScraper {
 
       completed += batch.length;
     }
-    console.log(`\n✅ Embedded ${completed} answers`);
+    console.log(`\n✅ Embedded ${completed} questions`);
   }
 
-  // Re-embed existing answers
-  async reembedAnswers(limit?: number) {
+  // Re-embed existing questions
+  async reembedQuestions(limit?: number) {
     if (!this.db) {
       console.log("❌ Database not initialized.");
       return;
     }
 
     const query = limit
-      ? `SELECT id, answer_text FROM answers LIMIT ?`
-      : `SELECT id, answer_text FROM answers`;
+      ? `SELECT id, title FROM questions LIMIT ?`
+      : `SELECT id, title FROM questions`;
     const params = limit ? [limit] : [];
 
-    const answers = this.query(query, params).map((row: any) => ({
+    const questions = this.query(query, params).map((row: any) => ({
       id: row.id,
-      answer_text: row.answer_text,
+      title: row.title,
     }));
 
-    if (answers.length === 0) {
-      console.log("❌ No answers found to embed.");
+    if (questions.length === 0) {
+      console.log("❌ No questions found to embed.");
       return;
     }
 
-    console.log(`🔄 Re-embedding ${answers.length} answers...`);
-    await this.embedBatch(answers);
+    console.log(`🔄 Re-embedding ${questions.length} questions...`);
+    await this.embedBatch(questions);
   }
 
   // Get embedding statistics
@@ -1114,31 +1114,31 @@ class InteractiveStackOverflowScraper {
       return;
     }
 
-    const totalAnswers = Number(
-      this.query("SELECT COUNT(*) as count FROM answers")[0]?.count || 0,
+    const totalQuestions = Number(
+      this.query("SELECT COUNT(*) as count FROM questions")[0]?.count || 0,
     );
-    const embeddedAnswers = Number(
-      this.query("SELECT COUNT(*) as count FROM answer_embeddings")[0]?.count ||
+    const embeddedQuestions = Number(
+      this.query("SELECT COUNT(*) as count FROM question_embeddings")[0]?.count ||
         0,
     );
-    const unembeddedAnswers = totalAnswers - embeddedAnswers;
+    const unembeddedQuestions = totalQuestions - embeddedQuestions;
 
     // Get last embedded timestamp
     const lastEmbedded = this.query(
-      "SELECT created_at FROM answer_embeddings ORDER BY created_at DESC LIMIT 1",
+      "SELECT created_at FROM question_embeddings ORDER BY created_at DESC LIMIT 1",
     )[0]?.created_at;
 
     // Get database size of embeddings table
     const dbSize = this.query("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")[0]?.size || 0;
 
     console.log("\n📊 Embedding Statistics:");
-    console.log(`  Total answers: ${totalAnswers}`);
-    console.log(`  Embedded: ${embeddedAnswers}`);
-    console.log(`  Unembedded: ${unembeddedAnswers}`);
+    console.log(`  Total questions: ${totalQuestions}`);
+    console.log(`  Embedded: ${embeddedQuestions}`);
+    console.log(`  Unembedded: ${unembeddedQuestions}`);
 
-    if (totalAnswers > 0) {
+    if (totalQuestions > 0) {
       const percentageEmbedded = Math.round(
-        (embeddedAnswers / totalAnswers) * 100,
+        (embeddedQuestions / totalQuestions) * 100,
       );
       console.log(`  Coverage: ${percentageEmbedded}%`);
     }
@@ -1273,9 +1273,9 @@ export async function embedNext(count: number | "all" = 50) {
 
 export async function reembed(limit?: number | "all") {
   if (limit === "all") {
-    await scraper.reembedAnswers();
+    await scraper.reembedQuestions();
   } else {
-    await scraper.reembedAnswers(limit);
+    await scraper.reembedQuestions(limit);
   }
 }
 
@@ -1295,12 +1295,11 @@ export async function semanticSearch(query: string, limit = 10) {
   const { generateEmbedding, deserializeEmbedding } = await import("./embeddings.ts");
   const queryEmbedding = await generateEmbedding(query);
 
-  // Get all embeddings from database
+  // Get all question embeddings from database
   const embeddingsData = scraper.query(
-    `SELECT ae.answer_id, a.question_id, a.answer_text, q.title, ae.embedding
-     FROM answer_embeddings ae
-     JOIN answers a ON ae.answer_id = a.id
-     JOIN questions q ON a.question_id = q.id`
+    `SELECT qe.question_id, q.title, qe.embedding
+     FROM question_embeddings qe
+     JOIN questions q ON qe.question_id = q.id`
   );
 
   if (embeddingsData.length === 0) {
@@ -1310,10 +1309,8 @@ export async function semanticSearch(query: string, limit = 10) {
 
   // Compute similarity scores
   interface ScoredResult {
-    answer_id: number;
     question_id: number;
     score: number;
-    answer_text: string;
     question_title: string;
   }
 
@@ -1321,10 +1318,8 @@ export async function semanticSearch(query: string, limit = 10) {
     const embedding = deserializeEmbedding(new Uint8Array(row.embedding as ArrayBuffer));
     const score = cosineSimilarity(queryEmbedding, embedding);
     return {
-      answer_id: row.answer_id as number,
       question_id: row.question_id as number,
       score,
-      answer_text: row.answer_text as string,
       question_title: row.title as string,
     };
   });
@@ -1338,7 +1333,6 @@ export async function semanticSearch(query: string, limit = 10) {
   topResults.forEach((result, index) => {
     const similarity = (result.score * 100).toFixed(1);
     console.log(`${index + 1}. [${similarity}%] Q${result.question_id}: ${result.question_title}`);
-    console.log(`   Answer preview: ${result.answer_text.replace(/<[^>]*>/g, '').slice(0, 150)}...`);
     console.log(`   https://stackoverflow.com/questions/${result.question_id}\n`);
   });
 }
@@ -1391,17 +1385,17 @@ Commands:
   rescrapeAll [limit]     Re-scrape N already-scraped questions (default: 10)
   delete <id>             Delete a question and all its data
   truncate                Delete ALL scraped data (keeps question IDs)
-  embedNext [count|all]   Embed next N unembed answers (default: 50) or 'all' remaining
-  reembed [limit|all]     Regenerate embeddings for N or all answers
+  embedNext [count|all]   Embed next N unembedded question titles (default: 50) or 'all' remaining
+  reembed [limit|all]     Regenerate embeddings for N or all question titles
   embedStats              Show embedding coverage statistics
-  semanticSearch <query>  Search answers using semantic similarity (default: 10 results)
+  semanticSearch <query>  Search questions using semantic similarity (default: 10 results)
 
 Examples:
   deno run --allow-net --allow-read --allow-write scraper.ts scrapeNext 10
   deno run --allow-net --allow-read --allow-write scraper.ts embedNext 100
   deno run --allow-net --allow-read --allow-write scraper.ts embedNext all
   deno run --allow-net --allow-read --allow-write scraper.ts embedStats
-  deno run --allow-net --allow-read --allow-write scraper.ts semanticSearch "optimize postgresql queries"
+  deno run --allow-net --allow-read --allow-write scraper.ts semanticSearch "best index for arrays"
   deno run --allow-net --allow-read --allow-write scraper.ts rescrape 866465
   deno run --allow-net --allow-read --allow-write scraper.ts truncate
 `);

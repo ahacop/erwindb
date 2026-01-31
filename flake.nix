@@ -31,9 +31,16 @@
               pkgs.cargo-edit
               pkgs.deno
               pkgs.just
+              pkgs.pkg-config
+              pkgs.openssl
+              pkgs.stdenv.cc.cc.lib
             ];
 
             RUST_BACKTRACE = 1;
+            LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";
+            OPENSSL_DIR = pkgs.openssl.dev;
+            OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+            OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           };
         });
     };
