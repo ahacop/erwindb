@@ -29,6 +29,8 @@
               rust
               pkgs.cargo-watch
               pkgs.cargo-edit
+              pkgs.deno
+              pkgs.just
             ];
 
             RUST_BACKTRACE = 1;

@@ -57,3 +57,27 @@ HTML Content → Parse & Extract → Text Wrapping → Syntax Highlighting → U
 ### Database Schema
 
 Questions, answers, and comments are stored in SQLite. Optional semantic search requires sqlite-vec extension with answer_embeddings table.
+
+## Scraper (`scraper/`)
+
+Deno-based Stack Overflow scraper for fetching Erwin Brandstetter's Q&A content.
+
+```bash
+cd scraper
+deno run --allow-net --allow-read --allow-write scraper.ts <command>
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `stats` | Show database statistics |
+| `fetchIds [pages]` | Fetch question IDs from API (default: 1 page) |
+| `scrapeNext [n]` | Scrape next n unscraped questions (default: 5) |
+| `scrapeOne <id>` | Scrape a specific question by ID |
+| `list [n]` | List scraped questions (default: 10) |
+| `search <term>` | Search questions by title/body |
+
+### API Key
+
+Set `STACKOVERFLOW_API_KEY` in `.env` for higher quota (10,000 vs 300 requests/day). Get one from [Stack Apps](https://stackapps.com/).
