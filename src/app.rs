@@ -102,7 +102,7 @@ impl App {
             height: 24,
 
             selected_index: 0,
-            sort_column: SortColumn::Id,
+            sort_column: SortColumn::Score,
             sort_direction: SortDirection::Desc,
             search_mode: SearchMode::None,
             search_input: String::new(),
