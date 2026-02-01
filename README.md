@@ -22,13 +22,13 @@ ErwinDB lets you browse Erwin's answers offline and search them quickly in a TUI
 
 ## Demos
 
-[![ErwinDB Demo](https://asciinema.org/a/5dJCmmFgbXWWfcdQ.svg)](https://asciinema.org/a/5dJCmmFgbXWWfcdQ)
+![ErwinDB Demo](docs/demo.gif)
 
-[![Fuzzy Search](https://asciinema.org/a/pjeEHo97VNtvEUeX.svg)](https://asciinema.org/a/pjeEHo97VNtvEUeX)
+![Fuzzy Search](docs/search.gif)
 
-[![Semantic Search](https://asciinema.org/a/QGqdENFrHq1KMREm.svg)](https://asciinema.org/a/QGqdENFrHq1KMREm)
+![Semantic Search](docs/semantic-search.gif)
 
-[![Erwin Mode](https://asciinema.org/a/vLamRTcEw1sruyt2.svg)](https://asciinema.org/a/vLamRTcEw1sruyt2)
+![Erwin Mode](docs/erwin-mode.gif)
 
 ## Installation
 
