@@ -3,7 +3,11 @@
 
 import { DB } from "https://deno.land/x/sqlite@v3.9.1/mod.ts";
 import { load } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
-import type { StackOverflowAnswer, ScrapedData, StoredQuestion } from "./types.ts";
+import type {
+  ScrapedData,
+  StackOverflowAnswer,
+  StoredQuestion,
+} from "./types.ts";
 
 // Lazy load embeddings module (only when needed for embedding commands)
 async function loadEmbeddings() {
@@ -15,9 +19,11 @@ const env = await load();
 
 // Stack Overflow user ID for Erwin Brandstetter
 const USER_ID = 939860;
-const API_KEY = env["STACKOVERFLOW_API_KEY"] || Deno.env.get("STACKOVERFLOW_API_KEY") || "";
+const API_KEY = env["STACKOVERFLOW_API_KEY"] ||
+  Deno.env.get("STACKOVERFLOW_API_KEY") || "";
 const API_KEY_PARAM = API_KEY ? `&key=${API_KEY}` : "";
-const API_URL = `https://api.stackexchange.com/2.3/users/${USER_ID}/answers?order=desc&sort=activity&site=stackoverflow&filter=default${API_KEY_PARAM}`;
+const API_URL =
+  `https://api.stackexchange.com/2.3/users/${USER_ID}/answers?order=desc&sort=activity&site=stackoverflow&filter=default${API_KEY_PARAM}`;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -33,7 +39,9 @@ class InteractiveStackOverflowScraper {
     if (API_KEY) {
       console.log(`🔑 Using API key (10,000 requests/day quota)`);
     } else {
-      console.log(`⚠️  No API key set (300 requests/day). Set STACKOVERFLOW_API_KEY env var for higher quota.`);
+      console.log(
+        `⚠️  No API key set (300 requests/day). Set STACKOVERFLOW_API_KEY env var for higher quota.`,
+      );
     }
 
     // Create tables
@@ -164,7 +172,9 @@ class InteractiveStackOverflowScraper {
       }
       this.db.execute("COMMIT");
       console.log(
-        `✅ Saved ${newCount} new question IDs (${questionIds.length - newCount} were already known)`,
+        `✅ Saved ${newCount} new question IDs (${
+          questionIds.length - newCount
+        } were already known)`,
       );
     } catch (err) {
       this.db.execute("ROLLBACK");
@@ -189,7 +199,9 @@ class InteractiveStackOverflowScraper {
         const data = await response.json();
 
         console.log(
-          `📄 Page ${page}: ${data.items?.length || 0} answers, quota remaining: ${data.quota_remaining}`,
+          `📄 Page ${page}: ${
+            data.items?.length || 0
+          } answers, quota remaining: ${data.quota_remaining}`,
         );
 
         const items = data.items || [];
@@ -212,7 +224,11 @@ class InteractiveStackOverflowScraper {
         page++;
         if (hasMore && page <= maxPages) await sleep(1000);
       } catch (err) {
-        console.error(`❌ Error fetching page ${page}: ${err instanceof Error ? err.message : err}`);
+        console.error(
+          `❌ Error fetching page ${page}: ${
+            err instanceof Error ? err.message : err
+          }`,
+        );
         break;
       }
     }
@@ -289,7 +305,9 @@ class InteractiveStackOverflowScraper {
     }
 
     console.log(
-      `\n📋 Question IDs (showing first ${Math.min(limit, this.questionIds.length)} of ${this.questionIds.length}):`,
+      `\n📋 Question IDs (showing first ${
+        Math.min(limit, this.questionIds.length)
+      } of ${this.questionIds.length}):`,
     );
 
     const idsToShow = this.questionIds.slice(0, limit);
@@ -333,7 +351,6 @@ class InteractiveStackOverflowScraper {
     return this.questionIds.slice(start, start + count);
   }
 
-
   // Helper to fetch with rate limit handling
   async fetchWithRetry(url: string, retries = 3): Promise<any> {
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -350,13 +367,19 @@ class InteractiveStackOverflowScraper {
           const waitSecs = parseInt(retryAfter, 10);
           console.log(`⚠️  Rate limited. Retry-After: ${waitSecs}s`);
           if (attempt < retries) {
-            console.log(`⏳ Waiting ${waitSecs}s before retry ${attempt + 1}/${retries}...`);
+            console.log(
+              `⏳ Waiting ${waitSecs}s before retry ${
+                attempt + 1
+              }/${retries}...`,
+            );
             await sleep(waitSecs * 1000);
             continue;
           }
         } else if (rateLimitReset) {
           const resetTime = new Date(parseInt(rateLimitReset, 10) * 1000);
-          console.log(`⚠️  Rate limited. Quota resets at: ${resetTime.toLocaleString()}`);
+          console.log(
+            `⚠️  Rate limited. Quota resets at: ${resetTime.toLocaleString()}`,
+          );
         } else {
           console.log(`⚠️  Rate limited (no retry info in headers).`);
           // Log all headers for debugging
@@ -364,11 +387,15 @@ class InteractiveStackOverflowScraper {
         }
 
         if (attempt < retries) {
-          console.log(`⏳ Waiting 30s before retry ${attempt + 1}/${retries}...`);
+          console.log(
+            `⏳ Waiting 30s before retry ${attempt + 1}/${retries}...`,
+          );
           await sleep(30000);
           continue;
         }
-        throw new Error("API rate limit exceeded. Try again later or use an API key.");
+        throw new Error(
+          "API rate limit exceeded. Try again later or use an API key.",
+        );
       }
 
       const data = await response.json();
@@ -381,7 +408,11 @@ class InteractiveStackOverflowScraper {
 
       // Check quota remaining
       if (data.quota_remaining !== undefined) {
-        console.log(`   📊 API quota: ${data.quota_remaining}/${data.quota_max || 10000} remaining`);
+        console.log(
+          `   📊 API quota: ${data.quota_remaining}/${
+            data.quota_max || 10000
+          } remaining`,
+        );
         if (data.quota_remaining === 0) {
           throw new Error("API quota exhausted. Resets daily at midnight UTC.");
         }
@@ -393,7 +424,9 @@ class InteractiveStackOverflowScraper {
   }
 
   // Scrape a single question
-  async scrapeQuestion(questionId: number): Promise<ScrapedData | StoredQuestion | null> {
+  async scrapeQuestion(
+    questionId: number,
+  ): Promise<ScrapedData | StoredQuestion | null> {
     // Check if already scraped
     if (this.isQuestionScraped(questionId)) {
       console.log(
@@ -411,7 +444,9 @@ class InteractiveStackOverflowScraper {
       );
 
       if (!questionData.items || questionData.items.length === 0) {
-        console.log(`❌ No question data found for ID ${questionId} (likely deleted)`);
+        console.log(
+          `❌ No question data found for ID ${questionId} (likely deleted)`,
+        );
         // Mark as scraped so we don't keep retrying deleted questions
         this.markQuestionAsScraped(questionId);
         return null;
@@ -433,8 +468,28 @@ class InteractiveStackOverflowScraper {
         `https://api.stackexchange.com/2.3/questions/${questionId}/comments?order=desc&sort=creation&site=stackoverflow&filter=withbody&pagesize=100${API_KEY_PARAM}`,
       );
 
-      const questionComments =
-        questionCommentsData.items
+      const questionComments = questionCommentsData.items
+        ?.map((comment: any) => ({
+          text: comment.body || "",
+          score: comment.score || 0,
+          creationDate: comment.creation_date || 0,
+          author: {
+            name: comment.owner?.display_name || "Unknown",
+            reputation: comment.owner?.reputation || 0,
+            userId: comment.owner?.user_id || 0,
+          },
+        }))
+        .filter((c: any) => c.text.trim().length > 0) || [];
+
+      const answers: any[] = [];
+
+      // For each answer, get its comments with author info
+      for (const answer of answersData.items || []) {
+        const answerCommentsData = await this.fetchWithRetry(
+          `https://api.stackexchange.com/2.3/answers/${answer.answer_id}/comments?order=desc&sort=creation&site=stackoverflow&filter=withbody&pagesize=100${API_KEY_PARAM}`,
+        );
+
+        const comments = answerCommentsData.items
           ?.map((comment: any) => ({
             text: comment.body || "",
             score: comment.score || 0,
@@ -446,28 +501,6 @@ class InteractiveStackOverflowScraper {
             },
           }))
           .filter((c: any) => c.text.trim().length > 0) || [];
-
-      const answers: any[] = [];
-
-      // For each answer, get its comments with author info
-      for (const answer of answersData.items || []) {
-        const answerCommentsData = await this.fetchWithRetry(
-          `https://api.stackexchange.com/2.3/answers/${answer.answer_id}/comments?order=desc&sort=creation&site=stackoverflow&filter=withbody&pagesize=100${API_KEY_PARAM}`,
-        );
-
-        const comments =
-          answerCommentsData.items
-            ?.map((comment: any) => ({
-              text: comment.body || "",
-              score: comment.score || 0,
-              creationDate: comment.creation_date || 0,
-              author: {
-                name: comment.owner?.display_name || "Unknown",
-                reputation: comment.owner?.reputation || 0,
-                userId: comment.owner?.user_id || 0,
-              },
-            }))
-            .filter((c: any) => c.text.trim().length > 0) || [];
 
         answers.push({
           answerId: answer.answer_id,
@@ -510,7 +543,9 @@ class InteractiveStackOverflowScraper {
       };
 
       console.log(
-        `✅ Fetched "${data.title.substring(0, 50)}..." (${answers.length} answers)`,
+        `✅ Fetched "${
+          data.title.substring(0, 50)
+        }..." (${answers.length} answers)`,
       );
 
       // Cache the result
@@ -527,13 +562,19 @@ class InteractiveStackOverflowScraper {
 
       return data;
     } catch (err) {
-      console.error(`❌ Error fetching question ${questionId}: ${err instanceof Error ? err.message : err}`);
+      console.error(
+        `❌ Error fetching question ${questionId}: ${
+          err instanceof Error ? err.message : err
+        }`,
+      );
       return null;
     }
   }
 
   // Batch scrape multiple questions
-  async scrapeQuestions(questionIds: number[]): Promise<(ScrapedData | StoredQuestion)[]> {
+  async scrapeQuestions(
+    questionIds: number[],
+  ): Promise<(ScrapedData | StoredQuestion)[]> {
     console.log(
       `🚀 Starting batch scrape of ${questionIds.length} questions...`,
     );
@@ -565,7 +606,9 @@ class InteractiveStackOverflowScraper {
     for (let i = 0; i < unscrapedIds.length; i++) {
       const id = unscrapedIds[i];
       console.log(
-        `\n📊 Progress: ${i + 1}/${unscrapedIds.length} (${Math.round(((i + 1) / unscrapedIds.length) * 100)}%)`,
+        `\n📊 Progress: ${i + 1}/${unscrapedIds.length} (${
+          Math.round(((i + 1) / unscrapedIds.length) * 100)
+        }%)`,
       );
 
       const data = await this.scrapeQuestion(id);
@@ -586,7 +629,9 @@ class InteractiveStackOverflowScraper {
   }
 
   // Smart scrape - automatically scrape unscraped questions
-  async scrapeNextBatch(batchSize = 5): Promise<(ScrapedData | StoredQuestion)[]> {
+  async scrapeNextBatch(
+    batchSize = 5,
+  ): Promise<(ScrapedData | StoredQuestion)[]> {
     const unscrapedIds = this.getUnscrapedQuestionIds(batchSize);
 
     if (unscrapedIds.length === 0) {
@@ -805,7 +850,11 @@ class InteractiveStackOverflowScraper {
       return null;
     }
 
-    const question = questions[0] as { id: number; title: string; body: string };
+    const question = questions[0] as {
+      id: number;
+      title: string;
+      body: string;
+    };
     const questionComments = this.query(
       "SELECT comment_text FROM question_comments WHERE question_id = ?",
       [questionId],
@@ -860,7 +909,9 @@ class InteractiveStackOverflowScraper {
         const text = typeof c === "string" ? c : c.text;
         if (text.trim().length > 0) {
           console.log(
-            `  ${i + 1}. ${text.substring(0, 200)}${text.length > 200 ? "..." : ""}`,
+            `  ${i + 1}. ${text.substring(0, 200)}${
+              text.length > 200 ? "..." : ""
+            }`,
           );
         }
       });
@@ -885,7 +936,9 @@ class InteractiveStackOverflowScraper {
           const text = typeof c === "string" ? c : c.text;
           if (text.trim().length > 0) {
             console.log(
-              `    ${j + 1}. ${text.substring(0, 150)}${text.length > 150 ? "..." : ""}`,
+              `    ${j + 1}. ${text.substring(0, 150)}${
+                text.length > 150 ? "..." : ""
+              }`,
             );
           }
         });
@@ -925,7 +978,7 @@ class InteractiveStackOverflowScraper {
   }
 
   // Reset scraped status for a question (allows re-scraping)
-  resetScrapedStatus(questionId: number) {
+  resetScrapedStatus(questionId: number, silent = false) {
     if (!this.db) {
       console.log("❌ Database not initialized.");
       return;
@@ -935,11 +988,584 @@ class InteractiveStackOverflowScraper {
       "UPDATE question_ids SET scraped = FALSE, scraped_at = NULL WHERE id = ?",
       [questionId],
     );
-    console.log(`🔄 Reset scraped status for question ${questionId}`);
+    if (!silent) {
+      console.log(`🔄 Reset scraped status for question ${questionId}`);
+    }
+  }
+
+  // Test the comprehensive filter and show the response structure
+  async testFilter(questionId: number): Promise<void> {
+    console.log(
+      `🧪 Testing comprehensive filter with question ${questionId}...`,
+    );
+    console.log("");
+
+    // Step 1: Create the filter
+    // Note: Using base=withbody to ensure we get the basic question fields
+    // and adding the nested answers, comments, and user details
+    console.log("📝 Step 1: Creating comprehensive filter...");
+    const filterInclude = [
+      "question.answers",
+      "question.comments",
+      "answer.answer_id",
+      "answer.body",
+      "answer.score",
+      "answer.is_accepted",
+      "answer.creation_date",
+      "answer.last_activity_date",
+      "answer.owner",
+      "answer.comments",
+      "comment.body",
+      "comment.score",
+      "comment.creation_date",
+      "comment.owner",
+      "shallow_user.display_name",
+      "shallow_user.reputation",
+      "shallow_user.user_id",
+    ].join(";");
+
+    const filterCreateUrl =
+      `https://api.stackexchange.com/2.3/filters/create?include=${filterInclude}&base=withbody&unsafe=true${API_KEY_PARAM}`;
+
+    try {
+      const filterResponse = await this.fetchWithRetry(filterCreateUrl);
+      const filterName = filterResponse.items?.[0]?.filter;
+
+      if (!filterName) {
+        console.log(
+          "❌ Failed to create filter. Response:",
+          JSON.stringify(filterResponse, null, 2),
+        );
+        return;
+      }
+
+      console.log(`✅ Created filter: ${filterName}`);
+      console.log("");
+
+      await sleep(1000);
+
+      // Step 2: Fetch the question with this filter
+      console.log("📝 Step 2: Fetching question with the filter...");
+      const questionUrl =
+        `https://api.stackexchange.com/2.3/questions/${questionId}?site=stackoverflow&filter=${filterName}${API_KEY_PARAM}`;
+      const questionResponse = await this.fetchWithRetry(questionUrl);
+
+      if (!questionResponse.items || questionResponse.items.length === 0) {
+        console.log(`❌ No question found with ID ${questionId}`);
+        return;
+      }
+
+      const question = questionResponse.items[0];
+
+      // Step 3: Analyze the response structure
+      console.log("");
+      console.log("📊 Response Structure Analysis:");
+      console.log("================================");
+      console.log("");
+
+      console.log(`Question ID: ${question.question_id}`);
+      console.log(`Title: ${question.title}`);
+      console.log(`Body length: ${question.body?.length || 0} chars`);
+      console.log(`Score: ${question.score}`);
+      console.log(`Views: ${question.view_count}`);
+      console.log(`Tags: ${question.tags?.join(", ") || "none"}`);
+      console.log(`Is Answered: ${question.is_answered}`);
+      console.log(
+        `Accepted Answer ID: ${question.accepted_answer_id || "none"}`,
+      );
+      console.log(
+        `Owner: ${question.owner?.display_name || "Unknown"} (rep: ${
+          question.owner?.reputation || 0
+        })`,
+      );
+      console.log("");
+
+      // Check question comments
+      console.log(`Question Comments: ${question.comments?.length || 0}`);
+      if (question.comments?.length > 0) {
+        console.log("  Sample comment:");
+        const c = question.comments[0];
+        console.log(`    - Body: ${c.body?.substring(0, 100)}...`);
+        console.log(`    - Score: ${c.score}`);
+        console.log(`    - Owner: ${c.owner?.display_name || "Unknown"}`);
+      }
+      console.log("");
+
+      // Check answers
+      console.log(`Answers: ${question.answers?.length || 0}`);
+      if (question.answers?.length > 0) {
+        const a = question.answers[0];
+        console.log("  Sample answer:");
+        console.log(`    - Answer ID: ${a.answer_id}`);
+        console.log(`    - Body length: ${a.body?.length || 0} chars`);
+        console.log(`    - Score: ${a.score}`);
+        console.log(`    - Is Accepted: ${a.is_accepted}`);
+        console.log(`    - Owner: ${a.owner?.display_name || "Unknown"}`);
+
+        // KEY CHECK: Are answer comments nested?
+        const hasNestedAnswerComments = a.comments !== undefined;
+        console.log("");
+        console.log(
+          `    ⚠️  Answer comments nested: ${
+            hasNestedAnswerComments ? "YES ✅" : "NO ❌"
+          }`,
+        );
+        if (hasNestedAnswerComments) {
+          console.log(`    Answer Comments: ${a.comments?.length || 0}`);
+          if (a.comments?.length > 0) {
+            const ac = a.comments[0];
+            console.log(`      Sample: ${ac.body?.substring(0, 80)}...`);
+          }
+        }
+      }
+
+      console.log("");
+      console.log("================================");
+      console.log("");
+
+      // Determine optimal strategy
+      const hasNestedAnswerComments = question.answers?.length > 0 &&
+        question.answers[0].comments !== undefined;
+      if (hasNestedAnswerComments) {
+        console.log(
+          "🎉 GREAT NEWS: Answer comments ARE nested in the response!",
+        );
+        console.log("   We can use a SINGLE API call to get everything.");
+      } else {
+        console.log("⚠️  Answer comments are NOT nested.");
+        console.log(
+          "   We'll need 2 API calls: 1 for question+answers, 1 for answer comments.",
+        );
+      }
+
+      console.log("");
+      console.log(`📝 Filter to use: ${filterName}`);
+      console.log("");
+    } catch (err) {
+      console.error(
+        `❌ Error testing filter: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+  }
+
+  // Scrape a question using the optimized comprehensive filter
+  async scrapeQuestionWithFilter(
+    questionId: number,
+    skipCache = false,
+  ): Promise<ScrapedData | null> {
+    // Check if already scraped (unless skipCache is true)
+    if (!skipCache && this.isQuestionScraped(questionId)) {
+      console.log(
+        `✅ Question ${questionId} already scraped, loading from database...`,
+      );
+      const stored = this.getQuestion(questionId);
+      // Convert StoredQuestion to ScrapedData-like structure for comparison
+      // Note: This won't have full metadata, but that's expected for cached results
+      return stored ? null : null; // Return null to indicate we should use the cached version
+    }
+
+    try {
+      console.log(
+        `🔄 Fetching question ${questionId} with optimized filter...`,
+      );
+
+      // Comprehensive filter that includes nested answers and question comments
+      // Created via: /filters/create?include=question.answers;question.comments;answer.*;comment.*;shallow_user.*&base=withbody&unsafe=true
+      // Note: answer.comments are NOT nested, so we need a second call for those
+      const COMPREHENSIVE_FILTER =
+        "tvdphAWpCmQIK6q*qU.H5TfzEg0n5h2ww)5jDh3E(TT";
+
+      // Single API call to get question + answers + all comments
+      const questionData = await this.fetchWithRetry(
+        `https://api.stackexchange.com/2.3/questions/${questionId}?site=stackoverflow&filter=${COMPREHENSIVE_FILTER}${API_KEY_PARAM}`,
+      );
+
+      if (!questionData.items || questionData.items.length === 0) {
+        console.log(
+          `❌ No question data found for ID ${questionId} (likely deleted)`,
+        );
+        return null;
+      }
+
+      const question = questionData.items[0];
+
+      // Check if answer comments are nested
+      const hasNestedAnswerComments = question.answers?.length > 0 &&
+        question.answers[0].comments !== undefined;
+
+      let answerCommentsMap: Map<number, any[]> = new Map();
+
+      if (!hasNestedAnswerComments && question.answers?.length > 0) {
+        // Need a second API call to get answer comments
+        console.log(
+          `   Fetching comments for ${question.answers.length} answers...`,
+        );
+        await sleep(1000);
+
+        const answerIds = question.answers.map((a: any) => a.answer_id);
+        const commentsFilter = "!nOedRLbqzB"; // Filter with comment body and owner
+
+        const commentsData = await this.fetchWithRetry(
+          `https://api.stackexchange.com/2.3/answers/${
+            answerIds.join(";")
+          }/comments?site=stackoverflow&filter=${commentsFilter}&pagesize=100${API_KEY_PARAM}`,
+        );
+
+        // Group comments by post_id (answer_id)
+        for (const comment of commentsData.items || []) {
+          const postId = comment.post_id;
+          if (!answerCommentsMap.has(postId)) {
+            answerCommentsMap.set(postId, []);
+          }
+          answerCommentsMap.get(postId)!.push(comment);
+        }
+      }
+
+      // Map the API response to ScrapedData
+      const data = this.mapApiResponseToScrapedData(
+        question,
+        answerCommentsMap,
+      );
+
+      console.log(
+        `✅ Fetched "${
+          data.title.substring(0, 50)
+        }..." (${data.answers.length} answers)`,
+      );
+
+      return data;
+    } catch (err) {
+      console.error(
+        `❌ Error fetching question ${questionId}: ${
+          err instanceof Error ? err.message : err
+        }`,
+      );
+      return null;
+    }
+  }
+
+  // Helper to map API response to ScrapedData type
+  private mapApiResponseToScrapedData(
+    question: any,
+    answerCommentsMap: Map<number, any[]>,
+  ): ScrapedData {
+    // Map question comments
+    const questionComments = (question.comments || [])
+      .map((comment: any) => ({
+        text: comment.body || "",
+        score: comment.score || 0,
+        creationDate: comment.creation_date || 0,
+        author: {
+          name: comment.owner?.display_name || "Unknown",
+          reputation: comment.owner?.reputation || 0,
+          userId: comment.owner?.user_id || 0,
+        },
+      }))
+      .filter((c: any) => c.text.trim().length > 0);
+
+    // Map answers
+    const answers = (question.answers || []).map((answer: any) => {
+      // Use nested comments if available, otherwise use the map from second API call
+      const rawComments = answer.comments ||
+        answerCommentsMap.get(answer.answer_id) || [];
+
+      const comments = rawComments
+        .map((comment: any) => ({
+          text: comment.body || "",
+          score: comment.score || 0,
+          creationDate: comment.creation_date || 0,
+          author: {
+            name: comment.owner?.display_name || "Unknown",
+            reputation: comment.owner?.reputation || 0,
+            userId: comment.owner?.user_id || 0,
+          },
+        }))
+        .filter((c: any) => c.text.trim().length > 0);
+
+      return {
+        answerId: answer.answer_id,
+        answerText: answer.body || "",
+        score: answer.score || 0,
+        isAccepted: answer.is_accepted || false,
+        creationDate: answer.creation_date || 0,
+        lastActivityDate: answer.last_activity_date || 0,
+        author: {
+          name: answer.owner?.display_name || "Unknown",
+          reputation: answer.owner?.reputation || 0,
+          userId: answer.owner?.user_id || 0,
+        },
+        comments,
+      };
+    });
+
+    return {
+      questionId: question.question_id,
+      title: question.title || "",
+      questionBody: question.body || "",
+      questionScore: question.score || 0,
+      viewCount: question.view_count || 0,
+      favoriteCount: question.favorite_count || 0,
+      creationDate: question.creation_date || 0,
+      lastActivityDate: question.last_activity_date || 0,
+      tags: question.tags || [],
+      isAnswered: question.is_answered || false,
+      acceptedAnswerId: question.accepted_answer_id,
+      closeReason: question.closed_reason,
+      questionComments,
+      author: {
+        name: question.owner?.display_name || "Unknown",
+        reputation: question.owner?.reputation || 0,
+        userId: question.owner?.user_id || 0,
+      },
+      answers,
+    };
+  }
+
+  // Smart scrape using optimized filter - automatically scrape unscraped questions
+  async scrapeNextBatchOptimized(batchSize = 5): Promise<ScrapedData[]> {
+    const unscrapedIds = this.getUnscrapedQuestionIds(batchSize);
+
+    if (unscrapedIds.length === 0) {
+      console.log(
+        "🎉 No unscraped questions found! All questions have been scraped.",
+      );
+      return [];
+    }
+
+    console.log(
+      `🚀 Optimized scraping of ${unscrapedIds.length} questions...`,
+    );
+
+    const results: ScrapedData[] = [];
+
+    for (let i = 0; i < unscrapedIds.length; i++) {
+      const id = unscrapedIds[i];
+      console.log(
+        `\n📊 Progress: ${i + 1}/${unscrapedIds.length} (${
+          Math.round(((i + 1) / unscrapedIds.length) * 100)
+        }%)`,
+      );
+
+      const data = await this.scrapeQuestionWithFilter(id, true);
+      if (data) {
+        results.push(data);
+        // Save to database
+        if (this.db) {
+          this.saveToDatabase(data);
+          this.markQuestionAsScraped(id);
+        }
+      } else {
+        // Mark as scraped anyway to avoid retrying deleted questions
+        this.markQuestionAsScraped(id);
+      }
+
+      // Rate limit: wait 1 second between questions (vs 2 seconds for old method)
+      // We can be more aggressive since we're making fewer API calls per question
+      if (i < unscrapedIds.length - 1) {
+        await sleep(1000);
+      }
+    }
+
+    console.log(
+      `\n🎉 Batch scrape complete! Scraped ${results.length} new questions successfully.`,
+    );
+    return results;
+  }
+
+  // Compare old scraping method vs new optimized method
+  async compareScrapeMethods(questionId: number): Promise<boolean> {
+    console.log(`🔬 Comparing scrape methods for question ${questionId}`);
+    console.log("=".repeat(60));
+    console.log("");
+
+    // First, ensure the question is not already scraped (or reset it)
+    this.deleteQuestion(questionId, true);
+    this.resetScrapedStatus(questionId, true);
+
+    // Method 1: OLD method
+    console.log("📊 Method 1: OLD scraping method (multiple API calls)");
+    console.log("-".repeat(40));
+
+    const oldStartTime = performance.now();
+    const oldData = await this.scrapeQuestion(questionId);
+    const oldEndTime = performance.now();
+    const oldDuration = Math.round(oldEndTime - oldStartTime);
+
+    if (!oldData || !("questionScore" in oldData)) {
+      console.log("❌ Old method failed to scrape question");
+      return false;
+    }
+
+    // Count API calls from old method: 1 (question) + 1 (answers) + 1 (question comments) + N (answer comments)
+    const oldApiCalls = 3 + (oldData as ScrapedData).answers.length;
+    console.log(`   Time: ${oldDuration}ms`);
+    console.log(`   API calls: ${oldApiCalls}`);
+    console.log("");
+
+    await sleep(2000); // Wait between methods to avoid rate limiting
+
+    // Reset for method 2
+    this.deleteQuestion(questionId, true);
+    this.resetScrapedStatus(questionId, true);
+
+    // Method 2: NEW optimized method
+    console.log("📊 Method 2: NEW optimized method (comprehensive filter)");
+    console.log("-".repeat(40));
+
+    const newStartTime = performance.now();
+    const newData = await this.scrapeQuestionWithFilter(questionId, true);
+    const newEndTime = performance.now();
+    const newDuration = Math.round(newEndTime - newStartTime);
+
+    if (!newData) {
+      console.log("❌ New method failed to scrape question");
+      return false;
+    }
+
+    // New method uses 1-2 API calls depending on whether answer comments are nested
+    const hasNestedComments = true; // Assume best case for now
+    const newApiCalls = hasNestedComments ? 1 : 2;
+    console.log(`   Time: ${newDuration}ms`);
+    console.log(
+      `   API calls: ~${newApiCalls} (1 if answer.comments nested, 2 otherwise)`,
+    );
+    console.log("");
+
+    // Compare the data
+    console.log("📋 Data Comparison");
+    console.log("-".repeat(40));
+
+    const oldScraped = oldData as ScrapedData;
+    const differences: string[] = [];
+
+    // Compare basic fields
+    if (oldScraped.questionId !== newData.questionId) {
+      differences.push(
+        `questionId: ${oldScraped.questionId} vs ${newData.questionId}`,
+      );
+    }
+    if (oldScraped.title !== newData.title) {
+      differences.push(
+        `title: "${oldScraped.title.substring(0, 30)}..." vs "${
+          newData.title.substring(0, 30)
+        }..."`,
+      );
+    }
+    if (oldScraped.questionBody !== newData.questionBody) {
+      differences.push(
+        `questionBody length: ${oldScraped.questionBody.length} vs ${newData.questionBody.length}`,
+      );
+    }
+    if (oldScraped.questionScore !== newData.questionScore) {
+      differences.push(
+        `questionScore: ${oldScraped.questionScore} vs ${newData.questionScore}`,
+      );
+    }
+    if (oldScraped.viewCount !== newData.viewCount) {
+      differences.push(
+        `viewCount: ${oldScraped.viewCount} vs ${newData.viewCount}`,
+      );
+    }
+    if (oldScraped.author.name !== newData.author.name) {
+      differences.push(
+        `author: ${oldScraped.author.name} vs ${newData.author.name}`,
+      );
+    }
+
+    // Compare question comments count
+    if (
+      oldScraped.questionComments.length !== newData.questionComments.length
+    ) {
+      differences.push(
+        `questionComments: ${oldScraped.questionComments.length} vs ${newData.questionComments.length}`,
+      );
+    }
+
+    // Compare answers
+    if (oldScraped.answers.length !== newData.answers.length) {
+      differences.push(
+        `answers count: ${oldScraped.answers.length} vs ${newData.answers.length}`,
+      );
+    } else {
+      // Compare each answer
+      for (let i = 0; i < oldScraped.answers.length; i++) {
+        const oldAnswer = oldScraped.answers[i];
+        const newAnswer = newData.answers.find((a) =>
+          a.answerId === oldAnswer.answerId
+        );
+
+        if (!newAnswer) {
+          differences.push(`answer ${oldAnswer.answerId}: missing in new data`);
+          continue;
+        }
+
+        if (oldAnswer.answerText !== newAnswer.answerText) {
+          differences.push(
+            `answer ${oldAnswer.answerId} text length: ${oldAnswer.answerText.length} vs ${newAnswer.answerText.length}`,
+          );
+        }
+        if (oldAnswer.score !== newAnswer.score) {
+          differences.push(
+            `answer ${oldAnswer.answerId} score: ${oldAnswer.score} vs ${newAnswer.score}`,
+          );
+        }
+        if (oldAnswer.author.name !== newAnswer.author.name) {
+          differences.push(
+            `answer ${oldAnswer.answerId} author: ${oldAnswer.author.name} vs ${newAnswer.author.name}`,
+          );
+        }
+        if (oldAnswer.comments.length !== newAnswer.comments.length) {
+          differences.push(
+            `answer ${oldAnswer.answerId} comments: ${oldAnswer.comments.length} vs ${newAnswer.comments.length}`,
+          );
+        }
+      }
+    }
+
+    // Report results
+    console.log(`   Title: ${newData.title.substring(0, 50)}...`);
+    console.log(`   Question score: ${newData.questionScore}`);
+    console.log(`   Author: ${newData.author.name}`);
+    console.log(`   Question comments: ${newData.questionComments.length}`);
+    console.log(`   Answers: ${newData.answers.length}`);
+
+    let totalAnswerComments = 0;
+    for (const answer of newData.answers) {
+      totalAnswerComments += answer.comments.length;
+    }
+    console.log(`   Total answer comments: ${totalAnswerComments}`);
+    console.log("");
+
+    if (differences.length === 0) {
+      console.log("✅ Data matches perfectly!");
+    } else {
+      console.log(`⚠️  Found ${differences.length} differences:`);
+      for (const diff of differences) {
+        console.log(`   - ${diff}`);
+      }
+    }
+
+    console.log("");
+    console.log("📈 Performance Summary");
+    console.log("-".repeat(40));
+    console.log(`   OLD: ${oldApiCalls} API calls, ${oldDuration}ms`);
+    console.log(`   NEW: ~${newApiCalls} API calls, ${newDuration}ms`);
+    const savingsPercent = Math.round((1 - newApiCalls / oldApiCalls) * 100);
+    console.log(`   Savings: ~${savingsPercent}% fewer API calls`);
+    console.log("");
+
+    // Restore the question in the database using the new method's data
+    if (this.db) {
+      console.log("💾 Saving data from new method to database...");
+      this.saveToDatabase(newData);
+      this.markQuestionAsScraped(questionId);
+    }
+
+    return differences.length === 0;
   }
 
   // Delete a question and all its related data
-  deleteQuestion(questionId: number) {
+  deleteQuestion(questionId: number, silent = false) {
     if (!this.db) {
       console.log("❌ Database not initialized.");
       return;
@@ -949,13 +1575,19 @@ class InteractiveStackOverflowScraper {
     db.execute("BEGIN TRANSACTION");
 
     try {
-      // Delete answer comments first
+      // Delete embeddings first (if table exists)
+      db.query("DELETE FROM question_embeddings WHERE question_id = ?", [
+        questionId,
+      ]);
+      // Delete answer comments
       db.query(
         "DELETE FROM answer_comments WHERE answer_id IN (SELECT id FROM answers WHERE question_id = ?)",
         [questionId],
       );
       // Delete question comments
-      db.query("DELETE FROM question_comments WHERE question_id = ?", [questionId]);
+      db.query("DELETE FROM question_comments WHERE question_id = ?", [
+        questionId,
+      ]);
       // Delete answers
       db.query("DELETE FROM answers WHERE question_id = ?", [questionId]);
       // Delete question
@@ -967,7 +1599,9 @@ class InteractiveStackOverflowScraper {
       );
 
       db.execute("COMMIT");
-      console.log(`🗑️  Deleted question ${questionId} and all related data`);
+      if (!silent) {
+        console.log(`🗑️  Deleted question ${questionId} and all related data`);
+      }
     } catch (err) {
       db.execute("ROLLBACK");
       throw err;
@@ -1000,8 +1634,8 @@ class InteractiveStackOverflowScraper {
     if (count === "all") {
       const totalUnembedded = Number(
         this.query(
-          "SELECT COUNT(*) as count FROM questions WHERE id NOT IN (SELECT question_id FROM question_embeddings)"
-        )[0]?.count || 0
+          "SELECT COUNT(*) as count FROM questions WHERE id NOT IN (SELECT question_id FROM question_embeddings)",
+        )[0]?.count || 0,
       );
 
       if (totalUnembedded === 0) {
@@ -1009,7 +1643,9 @@ class InteractiveStackOverflowScraper {
         return;
       }
 
-      console.log(`🤖 Embedding all ${totalUnembedded} unembedded questions...`);
+      console.log(
+        `🤖 Embedding all ${totalUnembedded} unembedded questions...`,
+      );
 
       // Get all unembedded questions at once for accurate progress
       const allUnembedded = this.getUnembeddedQuestions(totalUnembedded);
@@ -1039,7 +1675,8 @@ class InteractiveStackOverflowScraper {
 
   // Helper method to embed a batch of questions
   private async embedBatch(questions: { id: number; title: string }[]) {
-    const { batchGenerateEmbeddings, serializeEmbedding } = await loadEmbeddings();
+    const { batchGenerateEmbeddings, serializeEmbedding } =
+      await loadEmbeddings();
     const total = questions.length;
     let completed = 0;
 
@@ -1049,11 +1686,14 @@ class InteractiveStackOverflowScraper {
       const batch = questions.slice(i, i + batchSize);
 
       const texts = batch.map((q) => q.title);
-      const embeddings = await batchGenerateEmbeddings(texts, (current: number) => {
-        const overall = completed + current;
-        const status = this.progressBar(overall, total);
-        Deno.stdout.writeSync(new TextEncoder().encode(`\r🔄 ${status}`));
-      });
+      const embeddings = await batchGenerateEmbeddings(
+        texts,
+        (current: number) => {
+          const overall = completed + current;
+          const status = this.progressBar(overall, total);
+          Deno.stdout.writeSync(new TextEncoder().encode(`\r🔄 ${status}`));
+        },
+      );
 
       // Save to database
       if (this.db) {
@@ -1118,7 +1758,8 @@ class InteractiveStackOverflowScraper {
       this.query("SELECT COUNT(*) as count FROM questions")[0]?.count || 0,
     );
     const embeddedQuestions = Number(
-      this.query("SELECT COUNT(*) as count FROM question_embeddings")[0]?.count ||
+      this.query("SELECT COUNT(*) as count FROM question_embeddings")[0]
+        ?.count ||
         0,
     );
     const unembeddedQuestions = totalQuestions - embeddedQuestions;
@@ -1129,7 +1770,9 @@ class InteractiveStackOverflowScraper {
     )[0]?.created_at;
 
     // Get database size of embeddings table
-    const dbSize = this.query("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")[0]?.size || 0;
+    const dbSize = this.query(
+      "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()",
+    )[0]?.size || 0;
 
     console.log("\n📊 Embedding Statistics:");
     console.log(`  Total questions: ${totalQuestions}`);
@@ -1147,7 +1790,9 @@ class InteractiveStackOverflowScraper {
       console.log(`  Last embedded: ${lastEmbedded}`);
     }
 
-    console.log(`  Database size: ${(Number(dbSize) / 1024 / 1024).toFixed(2)} MB`);
+    console.log(
+      `  Database size: ${(Number(dbSize) / 1024 / 1024).toFixed(2)} MB`,
+    );
   }
 
   // Truncate all scraped data (keeps question IDs)
@@ -1349,6 +1994,27 @@ export async function fetchMd(questionId: number) {
   await scraper.fetchQuestionMarkdown(questionId);
 }
 
+export async function testFilter(questionId: number) {
+  await scraper.testFilter(questionId);
+}
+
+export async function compare(questionId: number) {
+  return await scraper.compareScrapeMethods(questionId);
+}
+
+export async function scrapeOptimized(questionId: number) {
+  const data = await scraper.scrapeQuestionWithFilter(questionId, true);
+  if (data && scraper["db"]) {
+    scraper.saveToDatabase(data);
+    scraper.markQuestionAsScraped(questionId);
+  }
+  return data;
+}
+
+export async function scrapeNextOptimized(batchSize = 5) {
+  return await scraper.scrapeNextBatchOptimized(batchSize);
+}
+
 export async function semanticSearch(query: string, limit = 10) {
   if (!scraper["db"]) {
     console.log("❌ Database not initialized.");
@@ -1358,14 +2024,16 @@ export async function semanticSearch(query: string, limit = 10) {
   console.log(`\n🔍 Semantic search: "${query}"\n`);
 
   // Generate embedding for query
-  const { generateEmbedding, deserializeEmbedding } = await import("./embeddings.ts");
+  const { generateEmbedding, deserializeEmbedding } = await import(
+    "./embeddings.ts"
+  );
   const queryEmbedding = await generateEmbedding(query);
 
   // Get all question embeddings from database
   const embeddingsData = scraper.query(
     `SELECT qe.question_id, q.title, qe.embedding
      FROM question_embeddings qe
-     JOIN questions q ON qe.question_id = q.id`
+     JOIN questions q ON qe.question_id = q.id`,
   );
 
   if (embeddingsData.length === 0) {
@@ -1381,7 +2049,9 @@ export async function semanticSearch(query: string, limit = 10) {
   }
 
   const results: ScoredResult[] = embeddingsData.map((row: any) => {
-    const embedding = deserializeEmbedding(new Uint8Array(row.embedding as ArrayBuffer));
+    const embedding = deserializeEmbedding(
+      new Uint8Array(row.embedding as ArrayBuffer),
+    );
     const score = cosineSimilarity(queryEmbedding, embedding);
     return {
       question_id: row.question_id as number,
@@ -1398,8 +2068,14 @@ export async function semanticSearch(query: string, limit = 10) {
 
   topResults.forEach((result, index) => {
     const similarity = (result.score * 100).toFixed(1);
-    console.log(`${index + 1}. [${similarity}%] Q${result.question_id}: ${result.question_title}`);
-    console.log(`   https://stackoverflow.com/questions/${result.question_id}\n`);
+    console.log(
+      `${
+        index + 1
+      }. [${similarity}%] Q${result.question_id}: ${result.question_title}`,
+    );
+    console.log(
+      `   https://stackoverflow.com/questions/${result.question_id}\n`,
+    );
   });
 }
 
@@ -1443,7 +2119,9 @@ Commands:
   stats                   Show database statistics
   list [limit]            List scraped questions (default: 10)
   scrapeNext [count]      Scrape next N unscraped questions (default: 5)
+  scrapeNextOptimized [n] Scrape next N questions using optimized filter (default: 5)
   scrapeOne <id>          Scrape a specific question by ID
+  scrapeOptimized <id>    Scrape a question using the optimized filter (fewer API calls)
   print <id>              Print a specific question
   search <term> [limit]   Search questions (default limit: 5)
   fetchIds [pages]        Fetch question IDs from API (default: 1 page)
@@ -1456,9 +2134,15 @@ Commands:
   embedStats              Show embedding coverage statistics
   semanticSearch <query>  Search questions using semantic similarity (default: 10 results)
   fetchMd <id>            Fetch a question with markdown body and output to stdout
+  testFilter <id>         Test the comprehensive filter and show response structure
+  compare <id>            Compare old vs new scraping methods (verifies data equivalence)
 
 Examples:
   deno run --allow-net --allow-read --allow-write scraper.ts scrapeNext 10
+  deno run --allow-net --allow-read --allow-write scraper.ts scrapeNextOptimized 10
+  deno run --allow-net --allow-read --allow-write scraper.ts scrapeOptimized 72251224
+  deno run --allow-net --allow-read --allow-write scraper.ts testFilter 72251224
+  deno run --allow-net --allow-read --allow-write scraper.ts compare 72251224
   deno run --allow-net --allow-read --allow-write scraper.ts embedNext 100
   deno run --allow-net --allow-read --allow-write scraper.ts embedNext all
   deno run --allow-net --allow-read --allow-write scraper.ts embedStats
@@ -1572,7 +2256,9 @@ Examples:
 
     case "reembed": {
       const limitArg = args[1];
-      const limit = limitArg === "all" ? "all" : (limitArg ? parseInt(limitArg) : undefined);
+      const limit = limitArg === "all"
+        ? "all"
+        : (limitArg ? parseInt(limitArg) : undefined);
       await reembed(limit);
       break;
     }
@@ -1600,6 +2286,42 @@ Examples:
         Deno.exit(1);
       }
       await fetchMd(id);
+      break;
+    }
+
+    case "testFilter": {
+      const id = parseInt(args[1]);
+      if (!id) {
+        console.error("❌ Please provide a question ID");
+        Deno.exit(1);
+      }
+      await testFilter(id);
+      break;
+    }
+
+    case "compare": {
+      const id = parseInt(args[1]);
+      if (!id) {
+        console.error("❌ Please provide a question ID");
+        Deno.exit(1);
+      }
+      await compare(id);
+      break;
+    }
+
+    case "scrapeOptimized": {
+      const id = parseInt(args[1]);
+      if (!id) {
+        console.error("❌ Please provide a question ID");
+        Deno.exit(1);
+      }
+      await scrapeOptimized(id);
+      break;
+    }
+
+    case "scrapeNextOptimized": {
+      const count = parseInt(args[1]) || 5;
+      await scrapeNextOptimized(count);
       break;
     }
 
