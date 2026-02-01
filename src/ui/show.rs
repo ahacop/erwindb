@@ -272,13 +272,20 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
         } else {
             url.clone()
         };
-        let padding_len = (area.width as usize).saturating_sub(keys.len() + link_prefix.len() + truncated_url.len());
+        let padding_len = (area.width as usize)
+            .saturating_sub(keys.len() + link_prefix.len() + truncated_url.len());
         let padding = " ".repeat(padding_len);
 
         let status = Line::from(vec![
             Span::styled(keys, styles::status_style()),
-            Span::styled(link_prefix, Style::default().bg(Color::DarkGray).fg(Color::White)),
-            Span::styled(format!("{}{}", truncated_url, padding), Style::default().bg(Color::DarkGray).fg(Color::Cyan)),
+            Span::styled(
+                link_prefix,
+                Style::default().bg(Color::DarkGray).fg(Color::White),
+            ),
+            Span::styled(
+                format!("{}{}", truncated_url, padding),
+                Style::default().bg(Color::DarkGray).fg(Color::Cyan),
+            ),
         ]);
 
         frame.render_widget(Paragraph::new(status), area);

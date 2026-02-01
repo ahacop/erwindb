@@ -84,7 +84,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Result<Self> {
-        let db = Database::open("sqlite.db")?;
+        let db = Database::open_embedded()?;
         let questions = db.get_questions()?;
 
         // Initialize semantic search (may fail if model can't be loaded)

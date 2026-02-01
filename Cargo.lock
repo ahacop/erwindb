@@ -741,6 +741,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "crossterm",
+ "dirs",
  "ego-tree",
  "fastembed",
  "html2text",

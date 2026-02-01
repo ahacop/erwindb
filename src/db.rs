@@ -2,7 +2,11 @@ use anyhow::{Context, Result};
 use rusqlite::ffi::sqlite3_auto_extension;
 use rusqlite::{params, Connection, OptionalExtension};
 use sqlite_vec::sqlite3_vec_init;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+/// Embedded database (compiled into the binary)
+const EMBEDDED_DB: &[u8] = include_bytes!("../sqlite.db");
 
 #[derive(Debug, Clone)]
 pub struct Question {
@@ -47,7 +51,39 @@ pub struct Database {
     conn: Connection,
 }
 
+/// Get the path where the database should be stored
+fn get_db_path() -> Result<PathBuf> {
+    let data_dir = dirs::data_dir()
+        .context("Could not find data directory")?
+        .join("erwindb");
+
+    Ok(data_dir.join("sqlite.db"))
+}
+
+/// Extract the embedded database to the data directory if it doesn't exist
+fn ensure_db_exists() -> Result<PathBuf> {
+    let db_path = get_db_path()?;
+
+    if !db_path.exists() {
+        // Create parent directory if needed
+        if let Some(parent) = db_path.parent() {
+            fs::create_dir_all(parent).context("Failed to create data directory")?;
+        }
+
+        // Write embedded database
+        fs::write(&db_path, EMBEDDED_DB).context("Failed to extract database")?;
+    }
+
+    Ok(db_path)
+}
+
 impl Database {
+    /// Open the embedded database (extracts to data directory on first run)
+    pub fn open_embedded() -> Result<Self> {
+        let db_path = ensure_db_exists()?;
+        Self::open(&db_path)
+    }
+
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
         // Register sqlite-vec extension before opening connection
         unsafe {

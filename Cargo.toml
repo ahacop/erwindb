@@ -45,6 +45,9 @@ open = "5.3"
 # Error handling
 anyhow = "1.0"
 
+# Platform directories
+dirs = "6"
+
 # Unicode width calculation
 unicode-width = "0.2"
 
