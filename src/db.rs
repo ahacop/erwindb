@@ -60,17 +60,23 @@ fn get_db_path() -> Result<PathBuf> {
     Ok(data_dir.join("sqlite.db"))
 }
 
-/// Extract the embedded database to the data directory if it doesn't exist
+/// Extract the embedded database to the data directory if it doesn't exist or is outdated
 fn ensure_db_exists() -> Result<PathBuf> {
     let db_path = get_db_path()?;
 
-    if !db_path.exists() {
-        // Create parent directory if needed
+    let needs_update = if db_path.exists() {
+        let cached_size = fs::metadata(&db_path)
+            .map(|m| m.len())
+            .unwrap_or(0);
+        cached_size != EMBEDDED_DB.len() as u64
+    } else {
+        true
+    };
+
+    if needs_update {
         if let Some(parent) = db_path.parent() {
             fs::create_dir_all(parent).context("Failed to create data directory")?;
         }
-
-        // Write embedded database
         fs::write(&db_path, EMBEDDED_DB).context("Failed to extract database")?;
     }
 
