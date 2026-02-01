@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Get current version from Cargo.toml
+current_version=$(grep '^version' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+
+if [[ -n "${1:-}" ]]; then
+  new_version="$1"
+else
+  # Bump patch level by default
+  IFS='.' read -r major minor patch <<< "$current_version"
+  new_version="$major.$minor.$((patch + 1))"
+fi
+
+echo "Current version: $current_version"
+echo "New version:     $new_version"
+echo
+
+# Update Cargo.toml
+sed -i "s/^version = \"$current_version\"/version = \"$new_version\"/" Cargo.toml
+
+# Update Cargo.lock
+cargo generate-lockfile
+
+# Commit and tag
+git add Cargo.toml Cargo.lock
+git commit -m "Bump version to $new_version"
+git tag "v$new_version"
+
+echo
+echo "Created commit and tag v$new_version"
+echo "Run 'git push origin main --tags' to trigger the release"

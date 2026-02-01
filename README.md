@@ -96,6 +96,25 @@ cargo build --release
 | `o`           | Open focused link or question in browser       |
 | `q` / `b`     | Back to list                                   |
 
+## Development
+
+```bash
+cargo build              # Debug build
+cargo build --release    # Optimized build
+cargo run                # Run the application
+cargo fmt                # Format code
+cargo clippy             # Lint checks
+```
+
+### Releasing
+
+```bash
+./scripts/release        # Bump patch version (0.9.4 -> 0.9.5)
+./scripts/release 1.0.0  # Set specific version
+
+git push origin main --tags  # Trigger release workflow
+```
+
 ## License
 
 This project has two separate licenses:
