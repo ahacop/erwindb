@@ -1102,41 +1102,38 @@ class InteractiveStackOverflowScraper {
         console.log(`    - Is Accepted: ${a.is_accepted}`);
         console.log(`    - Owner: ${a.owner?.display_name || "Unknown"}`);
 
-        // KEY CHECK: Are answer comments nested?
-        const hasNestedAnswerComments = a.comments !== undefined;
+        // Check answer comments - API omits the property if no comments exist
+        const hasComments = a.comments !== undefined;
         console.log("");
         console.log(
-          `    ⚠️  Answer comments nested: ${
-            hasNestedAnswerComments ? "YES ✅" : "NO ❌"
+          `    Answer comments: ${
+            hasComments ? a.comments.length : "0 (property omitted)"
           }`,
         );
-        if (hasNestedAnswerComments) {
-          console.log(`    Answer Comments: ${a.comments?.length || 0}`);
-          if (a.comments?.length > 0) {
-            const ac = a.comments[0];
-            console.log(`      Sample: ${ac.body?.substring(0, 80)}...`);
-          }
+        if (hasComments && a.comments?.length > 0) {
+          const ac = a.comments[0];
+          console.log(`      Sample: ${ac.body?.substring(0, 80)}...`);
         }
+      }
+
+      // Count total answer comments across all answers
+      let totalAnswerComments = 0;
+      for (const ans of question.answers || []) {
+        totalAnswerComments += ans.comments?.length || 0;
       }
 
       console.log("");
       console.log("================================");
       console.log("");
-
-      // Determine optimal strategy
-      const hasNestedAnswerComments = question.answers?.length > 0 &&
-        question.answers[0].comments !== undefined;
-      if (hasNestedAnswerComments) {
-        console.log(
-          "🎉 GREAT NEWS: Answer comments ARE nested in the response!",
-        );
-        console.log("   We can use a SINGLE API call to get everything.");
-      } else {
-        console.log("⚠️  Answer comments are NOT nested.");
-        console.log(
-          "   We'll need 2 API calls: 1 for question+answers, 1 for answer comments.",
-        );
-      }
+      console.log(
+        "🎉 All data retrieved in a SINGLE API call!",
+      );
+      console.log(
+        `   Total answer comments across all answers: ${totalAnswerComments}`,
+      );
+      console.log(
+        "   (API omits the comments property on answers with no comments)",
+      );
 
       console.log("");
       console.log(`📝 Filter to use: ${filterName}`);
@@ -1189,37 +1186,11 @@ class InteractiveStackOverflowScraper {
 
       const question = questionData.items[0];
 
-      // Check if answer comments are nested
-      const hasNestedAnswerComments = question.answers?.length > 0 &&
-        question.answers[0].comments !== undefined;
-
-      let answerCommentsMap: Map<number, any[]> = new Map();
-
-      if (!hasNestedAnswerComments && question.answers?.length > 0) {
-        // Need a second API call to get answer comments
-        console.log(
-          `   Fetching comments for ${question.answers.length} answers...`,
-        );
-        await sleep(1000);
-
-        const answerIds = question.answers.map((a: any) => a.answer_id);
-        const commentsFilter = "!nOedRLbqzB"; // Filter with comment body and owner
-
-        const commentsData = await this.fetchWithRetry(
-          `https://api.stackexchange.com/2.3/answers/${
-            answerIds.join(";")
-          }/comments?site=stackoverflow&filter=${commentsFilter}&pagesize=100${API_KEY_PARAM}`,
-        );
-
-        // Group comments by post_id (answer_id)
-        for (const comment of commentsData.items || []) {
-          const postId = comment.post_id;
-          if (!answerCommentsMap.has(postId)) {
-            answerCommentsMap.set(postId, []);
-          }
-          answerCommentsMap.get(postId)!.push(comment);
-        }
-      }
+      // The comprehensive filter requests answer.comments. If the property is
+      // missing on an answer, it means that answer has no comments (the API
+      // omits empty arrays rather than returning comments: []).
+      // Answer comments will be in answer.comments if they exist.
+      const answerCommentsMap: Map<number, any[]> = new Map();
 
       // Map the API response to ScrapedData
       const data = this.mapApiResponseToScrapedData(
@@ -1422,13 +1393,10 @@ class InteractiveStackOverflowScraper {
       return false;
     }
 
-    // New method uses 1-2 API calls depending on whether answer comments are nested
-    const hasNestedComments = true; // Assume best case for now
-    const newApiCalls = hasNestedComments ? 1 : 2;
+    // New method uses 1 API call (comprehensive filter includes everything)
+    const newApiCalls = 1;
     console.log(`   Time: ${newDuration}ms`);
-    console.log(
-      `   API calls: ~${newApiCalls} (1 if answer.comments nested, 2 otherwise)`,
-    );
+    console.log(`   API calls: ${newApiCalls}`);
     console.log("");
 
     // Compare the data
@@ -1549,9 +1517,9 @@ class InteractiveStackOverflowScraper {
     console.log("📈 Performance Summary");
     console.log("-".repeat(40));
     console.log(`   OLD: ${oldApiCalls} API calls, ${oldDuration}ms`);
-    console.log(`   NEW: ~${newApiCalls} API calls, ${newDuration}ms`);
+    console.log(`   NEW: ${newApiCalls} API call, ${newDuration}ms`);
     const savingsPercent = Math.round((1 - newApiCalls / oldApiCalls) * 100);
-    console.log(`   Savings: ~${savingsPercent}% fewer API calls`);
+    console.log(`   Savings: ${savingsPercent}% fewer API calls`);
     console.log("");
 
     // Restore the question in the database using the new method's data
