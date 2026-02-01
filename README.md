@@ -2,15 +2,18 @@
 
 A TUI for browsing [Erwin Brandstetter's](https://stackoverflow.com/users/939860/erwin-brandstetter) Stack Overflow Q&A content.
 
-![Erwin Brandstetter's Stack Overflow Profile](docs/erwin-profile.png)
-
-Erwin Brandstetter is a PostgreSQL consultant with 670k+ reputation and nearly 7,000 answers on Stack Overflow.
+![Erwin Mode](.github/assets/erwin-mode.png)
 
 ## Why Erwin's Answers?
 
-I can't tell you how many times over the years I've searched for some Postgres-related question on SO, and found an answer from Erwin Brandstetter that was just so thorough and informative. I've definitely leveled up as a developer from learning from his answers.
+![Erwin Brandstetter's Stack Overflow Profile](.github/assets/erwin-profile.png)
 
-He:
+Erwin Brandstetter is a PostgreSQL consultant with ~670k reputation and ~7k answers on Stack Overflow.
+
+Over the years, I've lost count of how often I've searched Stack Overflow for a Postgres question and ended up with an answer by Erwin Brandstetter that was exceptionally thorough and clear. I've become a better developer by learning from his responses.
+
+When answering questions, he typically:
+
 - Links to and quotes the PostgreSQL manual constantly, showing you exactly where features are documented
 - Notes which features work in which Postgres versions, and updates old answers when new versions add capabilities
 - Addresses edge cases you wouldn't think of—NULL handling, concurrency, race conditions
@@ -18,17 +21,7 @@ He:
 
 ## Why This App?
 
-ErwinDB lets you browse Erwin's answers offline and search them quickly in a TUI. Features include semantic search, opening links in an external browser, and an Erwin-mode that highlights his answers.
-
-## Demos
-
-![ErwinDB Demo](docs/demo.gif)
-
-![Fuzzy Search](docs/search.gif)
-
-![Semantic Search](docs/semantic-search.gif)
-
-![Erwin Mode](docs/erwin-mode.gif)
+ErwinDB lets you browse Erwin Brandstetter's answers offline and search them quickly from a TUI. It includes semantic search, syntax highlighting, one-key opening of links in your external browser, and an "Erwin mode" that prominently highlights his posts.
 
 ## Installation
 
@@ -105,6 +98,31 @@ cargo build --release
 | `Shift+Tab`   | Focus previous link                            |
 | `o`           | Open focused link or question in browser       |
 | `q` / `b`     | Back to list                                   |
+
+## Demos
+
+<video src="https://github.com/ahacop/erwindb/raw/main/.github/assets/demo.mp4" controls muted autoplay loop></video>
+
+<details>
+<summary>Fuzzy Search</summary>
+
+<video src="https://github.com/ahacop/erwindb/raw/main/.github/assets/search.mp4" controls muted autoplay loop></video>
+
+</details>
+
+<details>
+<summary>Semantic Search</summary>
+
+<video src="https://github.com/ahacop/erwindb/raw/main/.github/assets/semantic-search.mp4" controls muted autoplay loop></video>
+
+</details>
+
+<details>
+<summary>Erwin Mode</summary>
+
+<video src="https://github.com/ahacop/erwindb/raw/main/.github/assets/erwin-mode.mp4" controls muted autoplay loop></video>
+
+</details>
 
 ## Development
 
