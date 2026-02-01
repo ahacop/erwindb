@@ -20,6 +20,16 @@ He:
 
 ErwinDB lets you browse Erwin's answers offline and search them quickly in a TUI. Features include semantic search, opening links in an external browser, and an Erwin-mode that highlights his answers.
 
+## Demos
+
+[![ErwinDB Demo](https://asciinema.org/a/5dJCmmFgbXWWfcdQ.svg)](https://asciinema.org/a/5dJCmmFgbXWWfcdQ)
+
+[![Fuzzy Search](https://asciinema.org/a/pjeEHo97VNtvEUeX.svg)](https://asciinema.org/a/pjeEHo97VNtvEUeX)
+
+[![Semantic Search](https://asciinema.org/a/QGqdENFrHq1KMREm.svg)](https://asciinema.org/a/QGqdENFrHq1KMREm)
+
+[![Erwin Mode](https://asciinema.org/a/vLamRTcEw1sruyt2.svg)](https://asciinema.org/a/vLamRTcEw1sruyt2)
+
 ## Installation
 
 ### Cargo
