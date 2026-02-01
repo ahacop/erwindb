@@ -56,8 +56,10 @@
           default = pkgs.mkShell {
             buildInputs = [
               rust
+              pkgs.rustup
               pkgs.cargo-watch
               pkgs.cargo-edit
+              pkgs.cargo-dist
               pkgs.deno
               pkgs.just
               pkgs.pkg-config
