@@ -40,25 +40,9 @@ fetch-ids pages="1":
 scrape count="5":
     {{deno}} {{scraper}} scrapeNext {{count}}
 
-# Scrape next N questions using optimized filter (fewer API calls)
-scrape-fast count="5":
-    {{deno}} {{scraper}} scrapeNextOptimized {{count}}
-
 # Scrape a specific question by ID
 scrape-one id:
     {{deno}} {{scraper}} scrapeOne {{id}}
-
-# Scrape a specific question using optimized filter
-scrape-one-fast id:
-    {{deno}} {{scraper}} scrapeOptimized {{id}}
-
-# Test the comprehensive API filter
-test-filter id:
-    {{deno}} {{scraper}} testFilter {{id}}
-
-# Compare old vs new scraping methods
-compare id:
-    {{deno}} {{scraper}} compare {{id}}
 
 # List scraped questions
 list count="10":
