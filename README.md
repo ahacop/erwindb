@@ -4,11 +4,21 @@ A TUI for browsing [Erwin Brandstetter's](https://stackoverflow.com/users/939860
 
 ![Erwin Brandstetter's Stack Overflow Profile](docs/erwin-profile.png)
 
-Erwin Brandstetter is a PostgreSQL consultant based in Vienna, Austria with 670k+ reputation and nearly 7,000 answers on Stack Overflow. His answers are an invaluable resource for anyone working with PostgreSQL.
+Erwin Brandstetter is a PostgreSQL consultant with 670k+ reputation and nearly 7,000 answers on Stack Overflow.
 
-## Why This Exists
+## Why Erwin's Answers?
 
-![Stack Overflow Q&A count over time](docs/stackoverflow-decline.jpg)
+I can't tell you how many times over the years I've searched for some Postgres-related question on SO, and found an answer from Erwin Brandstetter that was just so thorough and informative. I've definitely leveled up as a developer from learning from his answers.
+
+He:
+- Links to and quotes the PostgreSQL manual constantly, showing you exactly where features are documented
+- Notes which features work in which Postgres versions, and updates old answers when new versions add capabilities
+- Addresses edge cases you wouldn't think of—NULL handling, concurrency, race conditions
+- Benchmarks multiple approaches with actual timing results
+
+## Why This App?
+
+ErwinDB lets you browse Erwin's answers offline and search them quickly in a TUI. Features include semantic search, opening links in an external browser, and an Erwin-mode that highlights his answers.
 
 ## Installation
 
@@ -52,39 +62,39 @@ cargo build --release
 
 ### Question List
 
-| Key | Action |
-|-----|--------|
-| `j` / `↓` | Move down |
-| `k` / `↑` | Move up |
-| `g` | Go to top |
-| `G` | Go to bottom |
-| `Space` | Page down |
-| `Ctrl+d` | Half page down |
-| `Ctrl+u` | Half page up |
-| `Enter` | View question |
-| `/` | Fuzzy search |
-| `?` | Semantic search |
-| `Esc` | Clear search |
-| `1-5` | Sort by column (ID, Date, Score, Views, Answers) |
-| `o` | Open in browser |
-| `q` | Quit |
+| Key       | Action                                           |
+| --------- | ------------------------------------------------ |
+| `j` / `↓` | Move down                                        |
+| `k` / `↑` | Move up                                          |
+| `g`       | Go to top                                        |
+| `G`       | Go to bottom                                     |
+| `Space`   | Page down                                        |
+| `Ctrl+d`  | Half page down                                   |
+| `Ctrl+u`  | Half page up                                     |
+| `Enter`   | View question                                    |
+| `/`       | Fuzzy search                                     |
+| `?`       | Semantic search                                  |
+| `Esc`     | Clear search                                     |
+| `1-5`     | Sort by column (ID, Date, Score, Views, Answers) |
+| `o`       | Open in browser                                  |
+| `q`       | Quit                                             |
 
 ### Question Detail
 
-| Key | Action |
-|-----|--------|
-| `j` / `↓` | Scroll down |
-| `k` / `↑` | Scroll up |
-| `g` | Go to top |
-| `G` | Go to bottom |
-| `Space` / `d` | Page down |
-| `u` | Page up |
-| `e` | Cycle to next Erwin answer / toggle Erwin pane |
-| `E` | Cycle to previous Erwin answer |
-| `Tab` | Focus next link |
-| `Shift+Tab` | Focus previous link |
-| `o` | Open focused link or question in browser |
-| `q` / `b` | Back to list |
+| Key           | Action                                         |
+| ------------- | ---------------------------------------------- |
+| `j` / `↓`     | Scroll down                                    |
+| `k` / `↑`     | Scroll up                                      |
+| `g`           | Go to top                                      |
+| `G`           | Go to bottom                                   |
+| `Space` / `d` | Page down                                      |
+| `u`           | Page up                                        |
+| `e`           | Cycle to next Erwin answer / toggle Erwin pane |
+| `E`           | Cycle to previous Erwin answer                 |
+| `Tab`         | Focus next link                                |
+| `Shift+Tab`   | Focus previous link                            |
+| `o`           | Open focused link or question in browser       |
+| `q` / `b`     | Back to list                                   |
 
 ## License
 
