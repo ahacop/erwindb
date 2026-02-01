@@ -31,7 +31,7 @@ scraper = "0.25"
 html2text = "0.16"
 
 # Semantic search
-fastembed = "5"
+fastembed = "4"
 
 # Async runtime
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "macros"] }

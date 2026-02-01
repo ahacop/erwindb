@@ -457,7 +457,7 @@ impl App {
             return;
         }
 
-        let Some(ref mut semantic) = self.semantic else {
+        let Some(ref semantic) = self.semantic else {
             return;
         };
 
