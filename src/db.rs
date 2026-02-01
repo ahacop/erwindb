@@ -87,6 +87,7 @@ impl Database {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
         // Register sqlite-vec extension before opening connection
         unsafe {
+            #[allow(clippy::missing_transmute_annotations)]
             sqlite3_auto_extension(Some(std::mem::transmute(sqlite3_vec_init as *const ())));
         }
 

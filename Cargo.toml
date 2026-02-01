@@ -13,25 +13,25 @@ categories = ["command-line-utilities", "database"]
 
 [dependencies]
 # TUI framework
-ratatui = "0.29"
-crossterm = "0.28"
+ratatui = "0.30"
+crossterm = "0.29"
 
 # Database
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.38", features = ["bundled"] }
 sqlite-vec = "0.1"
 
 # Fuzzy search
 nucleo = "0.5"
 
 # Syntax highlighting
-syntect = { version = "5.2", default-features = false, features = ["default-fancy"] }
+syntect = { version = "5.3", default-features = false, features = ["default-fancy"] }
 
 # HTML parsing
-scraper = "0.21"
-html2text = "0.14"
+scraper = "0.25"
+html2text = "0.16"
 
 # Semantic search
-fastembed = "4"
+fastembed = "5"
 
 # Async runtime
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "macros"] }
@@ -52,13 +52,13 @@ dirs = "6"
 unicode-width = "0.2"
 
 # Regex for HTML parsing
-regex = "1.10"
+regex = "1.12"
 
 # Lazy static initialization
-once_cell = "1.19"
+once_cell = "1.21"
 
 # Tree traversal for HTML
-ego-tree = "0.9"
+ego-tree = "0.11"
 
 # The profile that 'dist' will build with
 [profile.dist]

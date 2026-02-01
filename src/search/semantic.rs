@@ -14,7 +14,7 @@ impl SemanticSearch {
         Ok(Self { model })
     }
 
-    pub fn embed(&self, text: &str) -> Result<Vec<f32>> {
+    pub fn embed(&mut self, text: &str) -> Result<Vec<f32>> {
         let embeddings = self.model.embed(vec![text], None)?;
         Ok(embeddings.into_iter().next().unwrap())
     }
