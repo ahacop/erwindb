@@ -1,6 +1,6 @@
 [package]
 name = "erwindb"
-version = "0.9.4"
+version = "0.9.5"
 edition = "2021"
 description = "TUI for browsing Erwin Brandstetter's Stack Overflow Q&A"
 license = "GPL-3.0-or-later"
