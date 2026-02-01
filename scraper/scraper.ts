@@ -1206,6 +1206,7 @@ class InteractiveStackOverflowScraper {
     db.execute("BEGIN TRANSACTION");
 
     try {
+      db.execute("DELETE FROM question_embeddings");
       db.execute("DELETE FROM answer_comments");
       db.execute("DELETE FROM question_comments");
       db.execute("DELETE FROM answers");
