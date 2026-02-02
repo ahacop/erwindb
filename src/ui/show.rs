@@ -5,6 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
+use unicode_width::UnicodeWidthStr;
 
 use super::styles;
 use crate::app::App;
@@ -22,27 +23,33 @@ pub fn draw_show(frame: &mut Frame, app: &mut App) {
         ])
         .split(size);
 
-    // Add 1 space left margin to content only
-    let content_with_margin = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(1), Constraint::Min(1)])
-        .split(chunks[1]);
+    // Split position for dual-pane mode (simple half of screen width)
+    let split_pos = size.width / 2;
 
-    draw_header(frame, app, chunks[0], can_split);
-    draw_content(frame, app, content_with_margin[1], can_split);
+    draw_header(frame, app, chunks[0], can_split, split_pos);
+    draw_content(frame, app, chunks[1], can_split, split_pos);
     draw_status_bar(frame, app, chunks[2], can_split);
 }
 
-fn draw_header(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
+fn draw_header(frame: &mut Frame, app: &App, area: Rect, can_split: bool, split_pos: u16) {
     let attribution = "SO \u{00b7} CC BY-SA";
 
     if app.erwin_pane_visible && can_split {
-        let half_width = area.width / 2;
+        // Split header into two areas using Layout (matches content split)
+        let header_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Length(split_pos),
+                Constraint::Length(1),
+                Constraint::Min(1),
+            ])
+            .split(area);
+
         let erwin_count = app.erwin_answer_count();
 
         let left_title = format!(" Question #{} ", app.current_question_id);
         let right_title = format!(
-            " \u{25c6} Erwin's Answer {}/{} ",
+            "\u{25c6} Erwin's Answer {}/{} ",
             app.erwin_answer_index + 1,
             erwin_count
         );
@@ -65,48 +72,54 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
             styles::header_style()
         };
 
-        let left_padding = (half_width as usize).saturating_sub(left_title.len());
-        let right_padding = (half_width as usize)
-            .saturating_sub(right_title.len())
-            .saturating_sub(attribution.len());
+        // Render left header with background filling entire area
+        let left_header = Paragraph::new(Line::from(left_title)).style(left_style);
+        frame.render_widget(left_header, header_chunks[0]);
 
-        let header = Line::from(vec![
-            Span::styled(
-                format!("{}{}", left_title, " ".repeat(left_padding)),
-                left_style,
-            ),
-            Span::styled(
-                format!(
-                    "{}{}{}",
-                    right_title,
-                    " ".repeat(right_padding),
-                    attribution
-                ),
-                right_style,
-            ),
-        ]);
+        // Render half-block transition character
+        // ▐ (right half block): left half shows bg color, right half shows fg color
+        let transition_style = Style::default()
+            .fg(right_style.bg.unwrap_or(Color::Yellow))
+            .bg(left_style.bg.unwrap_or(Color::Cyan));
+        let transition = Paragraph::new(Line::from("\u{2590}")).style(transition_style);
+        frame.render_widget(transition, header_chunks[1]);
 
-        frame.render_widget(Paragraph::new(header), area);
+        // Render right header with attribution at end
+        let right_width = header_chunks[2].width as usize;
+        let right_padding = right_width
+            .saturating_sub(right_title.width())
+            .saturating_sub(attribution.width());
+        let right_header = Paragraph::new(Line::from(format!(
+            "{}{}{}",
+            right_title,
+            " ".repeat(right_padding),
+            attribution
+        )))
+        .style(right_style);
+        frame.render_widget(right_header, header_chunks[2]);
     } else {
         let title = format!(" Question #{} ", app.current_question_id);
         let padding = (area.width as usize)
-            .saturating_sub(title.len())
-            .saturating_sub(attribution.len());
+            .saturating_sub(title.width())
+            .saturating_sub(attribution.width());
 
-        let header = Line::from(vec![Span::styled(
-            format!("{}{}{}", title, " ".repeat(padding), attribution),
-            styles::header_style(),
-        )]);
+        let header = Paragraph::new(Line::from(format!(
+            "{}{}{}",
+            title,
+            " ".repeat(padding),
+            attribution
+        )))
+        .style(styles::header_style());
 
-        frame.render_widget(Paragraph::new(header), area);
+        frame.render_widget(header, area);
     }
 }
 
-fn draw_content(frame: &mut Frame, app: &mut App, area: Rect, can_split: bool) {
+fn draw_content(frame: &mut Frame, app: &mut App, area: Rect, can_split: bool, split_pos: u16) {
     if app.erwin_pane_visible && can_split {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .constraints([Constraint::Length(split_pos), Constraint::Min(1)])
             .split(area);
 
         draw_question_pane(frame, app, chunks[0]);
@@ -149,7 +162,11 @@ fn draw_question_pane(frame: &mut Frame, app: &mut App, area: Rect) {
         .collect();
 
     let content = Paragraph::new(visible_lines)
-        .block(Block::default().borders(Borders::NONE))
+        .block(
+            Block::default()
+                .borders(Borders::NONE)
+                .padding(ratatui::widgets::Padding::left(1)),
+        )
         .wrap(Wrap { trim: false });
 
     frame.render_widget(content, area);
@@ -288,7 +305,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
             ),
         ]);
 
-        frame.render_widget(Paragraph::new(status), area);
+        frame.render_widget(Paragraph::new(status).style(styles::status_style()), area);
         return;
     }
 
@@ -308,10 +325,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect, can_split: bool) {
         " j/k:scroll  Tab:links  o:browser  b/q:back".to_string()
     };
 
-    let status = Line::from(vec![Span::styled(
-        format!("{:<width$}", help, width = area.width as usize),
-        styles::status_style(),
-    )]);
+    let status = Line::from(vec![Span::styled(help, styles::status_style())]);
 
-    frame.render_widget(Paragraph::new(status), area);
+    frame.render_widget(Paragraph::new(status).style(styles::status_style()), area);
 }

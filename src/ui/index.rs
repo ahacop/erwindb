@@ -63,10 +63,7 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         }
     };
 
-    let header = Paragraph::new(Line::from(vec![Span::styled(
-        format!("{:<width$}", text, width = area.width as usize),
-        style,
-    )]));
+    let header = Paragraph::new(Line::from(text)).style(style);
     frame.render_widget(header, area);
 }
 
@@ -328,7 +325,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
     };
 
     let right_side = format!("{}{}", position, scroll_pct);
-    let help_width = area.width as usize - right_side.len() - 1;
+    let help_width = (area.width as usize).saturating_sub(right_side.len());
 
     let status = Line::from(vec![
         Span::styled(
@@ -338,7 +335,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
         Span::styled(right_side, styles::status_style()),
     ]);
 
-    frame.render_widget(Paragraph::new(status), area);
+    frame.render_widget(Paragraph::new(status).style(styles::status_style()), area);
 }
 
 fn format_date(timestamp: i64) -> String {

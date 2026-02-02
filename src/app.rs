@@ -285,8 +285,10 @@ impl App {
             KeyCode::Char('0') => {
                 // Restore relevance sort (only meaningful during search)
                 if self.fuzzy_matches.is_some() {
-                    let selected_id =
-                        self.get_sorted_questions().get(self.selected_index).map(|q| q.id);
+                    let selected_id = self
+                        .get_sorted_questions()
+                        .get(self.selected_index)
+                        .map(|q| q.id);
                     self.sort_active = false;
                     if let Some(id) = selected_id {
                         let sorted = self.get_sorted_questions();
@@ -525,7 +527,10 @@ impl App {
 
     fn toggle_sort(&mut self, column: SortColumn) {
         // Remember the currently selected question
-        let selected_id = self.get_sorted_questions().get(self.selected_index).map(|q| q.id);
+        let selected_id = self
+            .get_sorted_questions()
+            .get(self.selected_index)
+            .map(|q| q.id);
 
         if self.sort_column == column && self.sort_active {
             self.sort_direction = match self.sort_direction {
