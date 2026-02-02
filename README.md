@@ -101,26 +101,38 @@ cargo build --release
 
 ## Demos
 
-https://github.com/user-attachments/assets/93b40703-4ed2-436c-b6ec-acbe5fb3cbf6
+
+https://github.com/user-attachments/assets/cfce1543-0bd4-4c2b-95bd-8016697f5066
+
+
 
 <details>
 <summary>Fuzzy Search</summary>
 
-https://github.com/user-attachments/assets/e243e02a-0f4a-4cdf-99d7-cb4a7c79d1a5
+
+https://github.com/user-attachments/assets/5c4ca875-0e30-43dd-ae5f-11e18f4e4a9a
+
+
 
 </details>
 
 <details>
 <summary>Semantic Search</summary>
 
-https://github.com/user-attachments/assets/2508712b-0b5c-4644-ac49-5efb745ac2c7
+
+
+https://github.com/user-attachments/assets/94498e07-3751-4d7c-b2ec-d4280486bfcd
+
 
 </details>
 
 <details>
 <summary>Erwin Mode</summary>
 
-https://github.com/user-attachments/assets/d27b7856-f9e8-4e76-b0e0-8b242a0d7e59
+
+
+https://github.com/user-attachments/assets/77c4752b-bd65-45b6-9cf3-0f859f595ccd
+
 
 </details>
 
