@@ -269,6 +269,13 @@ impl App {
                 let half = (self.height.saturating_sub(3) / 2) as usize;
                 self.selected_index = self.selected_index.saturating_sub(half);
             }
+            KeyCode::Char('0') => {
+                // Restore relevance sort (only meaningful during search)
+                if self.fuzzy_matches.is_some() {
+                    self.sort_active = false;
+                    self.selected_index = 0;
+                }
+            }
             KeyCode::Char('1') => self.toggle_sort(SortColumn::Id),
             KeyCode::Char('2') => self.toggle_sort(SortColumn::Date),
             KeyCode::Char('3') => self.toggle_sort(SortColumn::Score),
