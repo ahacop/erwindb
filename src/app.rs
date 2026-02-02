@@ -285,9 +285,16 @@ impl App {
             KeyCode::Char('0') => {
                 // Restore relevance sort (only meaningful during search)
                 if self.fuzzy_matches.is_some() {
+                    let selected_id =
+                        self.get_sorted_questions().get(self.selected_index).map(|q| q.id);
                     self.sort_active = false;
-                    self.selected_index = 0;
-                    self.index_scroll = 0;
+                    if let Some(id) = selected_id {
+                        let sorted = self.get_sorted_questions();
+                        if let Some(pos) = sorted.iter().position(|q| q.id == id) {
+                            self.selected_index = pos;
+                            self.adjust_index_scroll();
+                        }
+                    }
                 }
             }
             KeyCode::Char('1') if self.semantic_results.is_none() => {
@@ -517,6 +524,9 @@ impl App {
     }
 
     fn toggle_sort(&mut self, column: SortColumn) {
+        // Remember the currently selected question
+        let selected_id = self.get_sorted_questions().get(self.selected_index).map(|q| q.id);
+
         if self.sort_column == column && self.sort_active {
             self.sort_direction = match self.sort_direction {
                 SortDirection::Asc => SortDirection::Desc,
@@ -527,6 +537,16 @@ impl App {
             self.sort_direction = SortDirection::Desc;
         }
         self.sort_active = true;
+
+        // Find the question's new position after sorting
+        if let Some(id) = selected_id {
+            let sorted = self.get_sorted_questions();
+            if let Some(pos) = sorted.iter().position(|q| q.id == id) {
+                self.selected_index = pos;
+                self.adjust_index_scroll();
+                return;
+            }
+        }
         self.selected_index = 0;
         self.index_scroll = 0;
     }
