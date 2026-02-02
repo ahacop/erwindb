@@ -316,7 +316,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
             } else if app.fuzzy_matches.is_some() {
                 " j/k:move  Space/Ctrl-d/u:page  0:relevance  1-5:sort  /:title  Esc:clear  q:back"
             } else if app.semantic_results.is_some() {
-                " j/k:move  Space/Ctrl-d/u:page  1-5:sort  /:title  ?:semantic  Esc:clear  q:back"
+                " j/k:move  Space/Ctrl-d/u:page  /:title  ?:semantic  Esc:clear  q:back"
             } else {
                 " j/k:move  Space/Ctrl-d/u:page  1-5:sort  /:title  ?:semantic  q:quit"
             }

@@ -276,11 +276,21 @@ impl App {
                     self.selected_index = 0;
                 }
             }
-            KeyCode::Char('1') => self.toggle_sort(SortColumn::Id),
-            KeyCode::Char('2') => self.toggle_sort(SortColumn::Date),
-            KeyCode::Char('3') => self.toggle_sort(SortColumn::Score),
-            KeyCode::Char('4') => self.toggle_sort(SortColumn::Views),
-            KeyCode::Char('5') => self.toggle_sort(SortColumn::Answers),
+            KeyCode::Char('1') if self.semantic_results.is_none() => {
+                self.toggle_sort(SortColumn::Id)
+            }
+            KeyCode::Char('2') if self.semantic_results.is_none() => {
+                self.toggle_sort(SortColumn::Date)
+            }
+            KeyCode::Char('3') if self.semantic_results.is_none() => {
+                self.toggle_sort(SortColumn::Score)
+            }
+            KeyCode::Char('4') if self.semantic_results.is_none() => {
+                self.toggle_sort(SortColumn::Views)
+            }
+            KeyCode::Char('5') if self.semantic_results.is_none() => {
+                self.toggle_sort(SortColumn::Answers)
+            }
             KeyCode::Enter => {
                 if let Some(question) = self.get_selected_question() {
                     self.navigate_to_question(question.id);
