@@ -101,26 +101,26 @@ cargo build --release
 
 ## Demos
 
-[![Demo](.github/assets/demo-thumb.png)](https://github.com/ahacop/erwindb/raw/main/.github/assets/demo.mp4)
+<video src="https://raw.githubusercontent.com/ahacop/erwindb/main/.github/assets/demo.mp4" controls muted></video>
 
 <details>
 <summary>Fuzzy Search</summary>
 
-[![Fuzzy Search](.github/assets/search-thumb.png)](https://github.com/ahacop/erwindb/raw/main/.github/assets/search.mp4)
+<video src="https://raw.githubusercontent.com/ahacop/erwindb/main/.github/assets/search.mp4" controls muted></video>
 
 </details>
 
 <details>
 <summary>Semantic Search</summary>
 
-[![Semantic Search](.github/assets/semantic-search-thumb.png)](https://github.com/ahacop/erwindb/raw/main/.github/assets/semantic-search.mp4)
+<video src="https://raw.githubusercontent.com/ahacop/erwindb/main/.github/assets/semantic-search.mp4" controls muted></video>
 
 </details>
 
 <details>
 <summary>Erwin Mode</summary>
 
-[![Erwin Mode](.github/assets/erwin-mode-thumb.png)](https://github.com/ahacop/erwindb/raw/main/.github/assets/erwin-mode.mp4)
+<video src="https://raw.githubusercontent.com/ahacop/erwindb/main/.github/assets/erwin-mode.mp4" controls muted></video>
 
 </details>
 
