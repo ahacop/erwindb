@@ -314,9 +314,6 @@ jobs:
             name=$(echo "$filename" | sed "s/\.rb$//")
             version=$(echo "$release" | jq .app_version --raw-output)
 
-            # Remove redundant version line (Homebrew infers it from URL)
-            sed -i '/^  version "/d' "Formula/${filename}"
-
             export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
             brew update
             # We avoid reformatting user-provided data such as the app description and homepage.
