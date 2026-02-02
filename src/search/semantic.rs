@@ -7,8 +7,14 @@ pub struct SemanticSearch {
 
 impl SemanticSearch {
     pub fn new() -> Result<Self> {
+        let cache_dir = dirs::cache_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("erwindb");
+
         let model = TextEmbedding::try_new(
-            InitOptions::new(EmbeddingModel::AllMiniLML6V2).with_show_download_progress(true),
+            InitOptions::new(EmbeddingModel::AllMiniLML6V2)
+                .with_cache_dir(cache_dir)
+                .with_show_download_progress(true),
         )?;
 
         Ok(Self { model })
