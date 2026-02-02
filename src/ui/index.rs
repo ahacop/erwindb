@@ -276,7 +276,10 @@ fn draw_question_list(frame: &mut Frame, app: &App, area: Rect) {
 
             // Build title with fuzzy highlighting if applicable
             let title_spans = if let Some(ref matches) = app.fuzzy_matches {
-                if let Some(m) = matches.iter().find(|m| m.index == idx) {
+                if let Some(m) = matches
+                    .iter()
+                    .find(|m| app.questions[m.index].id == q.id)
+                {
                     highlight_fuzzy_match(&title, &m.match_indices, base_style)
                 } else {
                     vec![Span::styled(title.clone(), base_style)]
