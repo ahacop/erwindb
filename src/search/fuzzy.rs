@@ -68,6 +68,9 @@ pub struct FuzzyMatch {
     pub match_indices: Vec<u32>,
 }
 
+/// Minimum score as a fraction of the best match score (0.0 - 1.0)
+const RELATIVE_SCORE_THRESHOLD: f32 = 0.35;
+
 pub fn fuzzy_filter<T, F>(items: &[T], pattern: &str, get_text: F) -> Vec<FuzzyMatch>
 where
     F: Fn(&T) -> &str,
@@ -94,6 +97,12 @@ where
 
     // Sort by score descending
     matches.sort_by(|a, b| b.score.cmp(&a.score));
+
+    // Filter to keep only results within threshold of best score
+    if let Some(best) = matches.first() {
+        let min_score = (best.score as f32 * RELATIVE_SCORE_THRESHOLD) as u32;
+        matches.retain(|m| m.score >= min_score);
+    }
 
     matches
 }
