@@ -65,9 +65,7 @@ fn ensure_db_exists() -> Result<PathBuf> {
     let db_path = get_db_path()?;
 
     let needs_update = if db_path.exists() {
-        let cached_size = fs::metadata(&db_path)
-            .map(|m| m.len())
-            .unwrap_or(0);
+        let cached_size = fs::metadata(&db_path).map(|m| m.len()).unwrap_or(0);
         cached_size != EMBEDDED_DB.len() as u64
     } else {
         true

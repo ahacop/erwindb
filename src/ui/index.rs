@@ -189,13 +189,7 @@ fn draw_column_headers(frame: &mut Frame, app: &App, area: Rect) {
 fn draw_question_list(frame: &mut Frame, app: &App, area: Rect) {
     let sorted = app.get_sorted_questions();
     let visible_rows = area.height as usize;
-
-    // Calculate scroll offset to keep selected item visible
-    let scroll = if app.selected_index >= visible_rows {
-        app.selected_index - visible_rows + 1
-    } else {
-        0
-    };
+    let scroll = app.index_scroll;
 
     let fixed_width = 3 + 8 + 13 + 6 + 7 + 4 + 5; // selector + columns + spaces
     let title_width = (area.width as usize).saturating_sub(fixed_width);
@@ -276,10 +270,7 @@ fn draw_question_list(frame: &mut Frame, app: &App, area: Rect) {
 
             // Build title with fuzzy highlighting if applicable
             let title_spans = if let Some(ref matches) = app.fuzzy_matches {
-                if let Some(m) = matches
-                    .iter()
-                    .find(|m| app.questions[m.index].id == q.id)
-                {
+                if let Some(m) = matches.iter().find(|m| app.questions[m.index].id == q.id) {
                     highlight_fuzzy_match(&title, &m.match_indices, base_style)
                 } else {
                     vec![Span::styled(title.clone(), base_style)]

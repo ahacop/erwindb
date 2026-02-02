@@ -49,6 +49,7 @@ pub struct App {
 
     // Index page state
     pub selected_index: usize,
+    pub index_scroll: usize,
     pub sort_column: SortColumn,
     pub sort_direction: SortDirection,
     pub sort_active: bool,
@@ -105,6 +106,7 @@ impl App {
             height: 24,
 
             selected_index: 0,
+            index_scroll: 0,
             sort_column: SortColumn::Score,
             sort_direction: SortDirection::Desc,
             sort_active: true,
@@ -164,6 +166,7 @@ impl App {
                     self.search_input.clear();
                     self.fuzzy_matches = None;
                     self.selected_index = 0;
+                    self.index_scroll = 0;
                 }
                 KeyCode::Enter => {
                     if self.search_mode == SearchMode::Semantic && !self.search_input.is_empty() {
@@ -221,6 +224,7 @@ impl App {
                     self.search_input.clear();
                     self.sort_active = true;
                     self.selected_index = 0;
+                    self.index_scroll = 0;
                 } else {
                     self.should_quit = true;
                 }
@@ -240,40 +244,50 @@ impl App {
                     self.search_input.clear();
                     self.sort_active = true;
                     self.selected_index = 0;
+                    self.index_scroll = 0;
                 }
             }
             KeyCode::Char('j') | KeyCode::Down => {
                 let max = self.visible_questions_count().saturating_sub(1);
                 self.selected_index = (self.selected_index + 1).min(max);
+                self.adjust_index_scroll();
             }
             KeyCode::Char('k') | KeyCode::Up => {
                 self.selected_index = self.selected_index.saturating_sub(1);
+                self.adjust_index_scroll();
             }
             KeyCode::Char('g') => {
                 self.selected_index = 0;
+                self.index_scroll = 0;
+                self.adjust_index_scroll();
             }
             KeyCode::Char('G') => {
                 self.selected_index = self.visible_questions_count().saturating_sub(1);
+                self.adjust_index_scroll();
             }
             KeyCode::Char(' ') => {
                 let visible = self.height.saturating_sub(3) as usize;
                 let max = self.visible_questions_count().saturating_sub(1);
                 self.selected_index = (self.selected_index + visible).min(max);
+                self.adjust_index_scroll();
             }
             KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 let half = (self.height.saturating_sub(3) / 2) as usize;
                 let max = self.visible_questions_count().saturating_sub(1);
                 self.selected_index = (self.selected_index + half).min(max);
+                self.adjust_index_scroll();
             }
             KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 let half = (self.height.saturating_sub(3) / 2) as usize;
                 self.selected_index = self.selected_index.saturating_sub(half);
+                self.adjust_index_scroll();
             }
             KeyCode::Char('0') => {
                 // Restore relevance sort (only meaningful during search)
                 if self.fuzzy_matches.is_some() {
                     self.sort_active = false;
                     self.selected_index = 0;
+                    self.index_scroll = 0;
                 }
             }
             KeyCode::Char('1') if self.semantic_results.is_none() => {
@@ -471,6 +485,7 @@ impl App {
             self.sort_active = false;
         }
         self.selected_index = 0;
+        self.index_scroll = 0;
     }
 
     fn perform_semantic_search(&mut self) {
@@ -498,6 +513,7 @@ impl App {
         self.semantic_results = Some(question_ids);
         self.sort_active = false;
         self.selected_index = 0;
+        self.index_scroll = 0;
     }
 
     fn toggle_sort(&mut self, column: SortColumn) {
@@ -512,6 +528,7 @@ impl App {
         }
         self.sort_active = true;
         self.selected_index = 0;
+        self.index_scroll = 0;
     }
 
     pub fn navigate_to_question(&mut self, question_id: i64) {
@@ -597,6 +614,33 @@ impl App {
         } else {
             self.questions.len()
         }
+    }
+
+    /// Adjust index_scroll to keep cursor within scroll offset of viewport edges
+    pub fn adjust_index_scroll(&mut self) {
+        const SCROLL_OFFSET: usize = 3;
+        let visible_rows = self.height.saturating_sub(4) as usize; // header + columns + status
+
+        if visible_rows == 0 {
+            return;
+        }
+
+        // If cursor is above the visible area (with offset), scroll up
+        let min_visible = self.index_scroll + SCROLL_OFFSET;
+        if self.selected_index < min_visible {
+            self.index_scroll = self.selected_index.saturating_sub(SCROLL_OFFSET);
+        }
+
+        // If cursor is below the visible area (with offset), scroll down
+        let max_visible = self.index_scroll + visible_rows.saturating_sub(SCROLL_OFFSET + 1);
+        if self.selected_index > max_visible {
+            self.index_scroll =
+                (self.selected_index + SCROLL_OFFSET + 1).saturating_sub(visible_rows);
+        }
+
+        // Clamp scroll to valid range
+        let max_scroll = self.visible_questions_count().saturating_sub(visible_rows);
+        self.index_scroll = self.index_scroll.min(max_scroll);
     }
 
     pub fn get_sorted_questions(&self) -> Vec<&Question> {
