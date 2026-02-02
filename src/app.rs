@@ -51,6 +51,7 @@ pub struct App {
     pub selected_index: usize,
     pub sort_column: SortColumn,
     pub sort_direction: SortDirection,
+    pub sort_active: bool,
     pub search_mode: SearchMode,
     pub search_input: String,
     pub fuzzy_matches: Option<Vec<FuzzyMatch>>,
@@ -106,6 +107,7 @@ impl App {
             selected_index: 0,
             sort_column: SortColumn::Score,
             sort_direction: SortDirection::Desc,
+            sort_active: true,
             search_mode: SearchMode::None,
             search_input: String::new(),
             fuzzy_matches: None,
@@ -217,6 +219,7 @@ impl App {
                     self.fuzzy_matches = None;
                     self.semantic_results = None;
                     self.search_input.clear();
+                    self.sort_active = true;
                     self.selected_index = 0;
                 } else {
                     self.should_quit = true;
@@ -235,6 +238,7 @@ impl App {
                     self.fuzzy_matches = None;
                     self.semantic_results = None;
                     self.search_input.clear();
+                    self.sort_active = true;
                     self.selected_index = 0;
                 }
             }
@@ -447,6 +451,7 @@ impl App {
         } else {
             let matches = fuzzy_filter(&self.questions, &self.search_input, |q| &q.title);
             self.fuzzy_matches = Some(matches);
+            self.sort_active = false;
         }
         self.selected_index = 0;
     }
@@ -474,11 +479,12 @@ impl App {
         // Extract question IDs directly - no deduplication or re-ranking needed
         let question_ids: Vec<i64> = results.into_iter().map(|r| r.question_id).collect();
         self.semantic_results = Some(question_ids);
+        self.sort_active = false;
         self.selected_index = 0;
     }
 
     fn toggle_sort(&mut self, column: SortColumn) {
-        if self.sort_column == column {
+        if self.sort_column == column && self.sort_active {
             self.sort_direction = match self.sort_direction {
                 SortDirection::Asc => SortDirection::Desc,
                 SortDirection::Desc => SortDirection::Asc,
@@ -487,6 +493,7 @@ impl App {
             self.sort_column = column;
             self.sort_direction = SortDirection::Desc;
         }
+        self.sort_active = true;
         self.selected_index = 0;
     }
 
@@ -576,14 +583,18 @@ impl App {
     }
 
     pub fn get_sorted_questions(&self) -> Vec<&Question> {
-        if let Some(ref matches) = self.fuzzy_matches {
+        let mut sorted: Vec<&Question> = if let Some(ref matches) = self.fuzzy_matches {
             matches.iter().map(|m| &self.questions[m.index]).collect()
         } else if let Some(ref ids) = self.semantic_results {
             ids.iter()
                 .filter_map(|id| self.questions.iter().find(|q| q.id == *id))
                 .collect()
         } else {
-            let mut sorted: Vec<_> = self.questions.iter().collect();
+            self.questions.iter().collect()
+        };
+
+        // Apply sorting (for search results, only if user has explicitly sorted)
+        if self.sort_active {
             sorted.sort_by(|a, b| {
                 let cmp = match self.sort_column {
                     SortColumn::Id => a.id.cmp(&b.id),
@@ -597,8 +608,9 @@ impl App {
                     SortDirection::Desc => cmp.reverse(),
                 }
             });
-            sorted
         }
+
+        sorted
     }
 
     pub fn get_selected_question(&self) -> Option<&Question> {

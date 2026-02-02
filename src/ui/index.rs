@@ -133,7 +133,7 @@ fn draw_semantic_modal(frame: &mut Frame, app: &App, area: Rect) {
 
 fn draw_column_headers(frame: &mut Frame, app: &App, area: Rect) {
     let get_indicator = |col: SortColumn| -> &str {
-        if app.sort_column == col {
+        if app.sort_active && app.sort_column == col {
             match app.sort_direction {
                 SortDirection::Asc => "\u{25b2}",
                 SortDirection::Desc => "\u{25bc}",
