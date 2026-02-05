@@ -16,6 +16,32 @@ echo "Current version: $current_version"
 echo "New version:     $new_version"
 echo
 
+# Check if CHANGELOG.md has unreleased changes
+if ! grep -q "^## \[Unreleased\]" CHANGELOG.md; then
+  echo "Error: No [Unreleased] section found in CHANGELOG.md"
+  exit 1
+fi
+
+# Check if there are actual changes in the Unreleased section
+unreleased_content=$(sed -n '/^## \[Unreleased\]/,/^## \[/p' CHANGELOG.md | tail -n +2 | head -n -1)
+if [[ -z "$(echo "$unreleased_content" | grep -v '^$')" ]]; then
+  echo "Error: No changes documented in [Unreleased] section of CHANGELOG.md"
+  echo "Please add changelog entries before releasing."
+  exit 1
+fi
+
+# Get today's date
+release_date=$(date +%Y-%m-%d)
+
+# Update CHANGELOG.md: rename [Unreleased] to new version and add new [Unreleased]
+sed -i "s/^## \[Unreleased\]$/## [Unreleased]\n\n## [$new_version] - $release_date/" CHANGELOG.md
+
+# Update the comparison links at the bottom of CHANGELOG.md
+# Change: [Unreleased]: .../compare/vX.Y.Z...HEAD
+# To:     [Unreleased]: .../compare/vNEW...HEAD
+#         [NEW]: .../compare/vX.Y.Z...vNEW
+sed -i "s|\[Unreleased\]: \(.*\)/compare/v$current_version\.\.\.HEAD|[Unreleased]: \1/compare/v$new_version...HEAD\n[$new_version]: \1/compare/v$current_version...v$new_version|" CHANGELOG.md
+
 # Update Cargo.toml
 sed -i "s/^version = \"$current_version\"/version = \"$new_version\"/" Cargo.toml
 
@@ -23,7 +49,7 @@ sed -i "s/^version = \"$current_version\"/version = \"$new_version\"/" Cargo.tom
 cargo generate-lockfile
 
 # Commit and tag
-git add Cargo.toml Cargo.lock
+git add Cargo.toml Cargo.lock CHANGELOG.md
 git commit -m "Bump version to $new_version"
 git tag "v$new_version"
 
