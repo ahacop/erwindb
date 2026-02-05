@@ -873,10 +873,22 @@ impl App {
                 }
             }
             None => {
+                let visible_height = self.height.saturating_sub(2) as usize;
+                let scroll = *scroll_offset;
+                let visible_end = scroll + visible_height;
+
                 if forward {
-                    0
+                    // Find first link in visible area, or first link after viewport
+                    links
+                        .iter()
+                        .position(|link| link.line_index >= scroll)
+                        .unwrap_or(0)
                 } else {
-                    links.len() - 1
+                    // Find last link in visible area, or last link before viewport
+                    links
+                        .iter()
+                        .rposition(|link| link.line_index < visible_end)
+                        .unwrap_or(links.len() - 1)
                 }
             }
         };
