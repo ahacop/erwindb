@@ -10,13 +10,13 @@ A TUI for browsing [Erwin Brandstetter's](https://stackoverflow.com/users/939860
 
 Erwin Brandstetter is a PostgreSQL consultant with ~670k reputation and ~7k answers on Stack Overflow.
 
-Over the years, I've lost count of how often I've searched Stack Overflow for a Postgres question and ended up with an answer by Erwin Brandstetter that was exceptionally thorough and clear. I've become a better developer by learning from his responses.
+I’ve lost count of how often a PostgreSQL search has brought me to an Erwin Brandstetter response on Stack Overflow. His answers are reliably thorough and exceptionally clear, and studying them has played a meaningful role in my development as an engineer.
 
 When answering questions, he typically:
 
-- Links to and quotes the PostgreSQL manual constantly, showing you exactly where features are documented
+- Links to and quotes the PostgreSQL manual, showing you exactly where features are documented
 - Notes which features work in which Postgres versions, and updates old answers when new versions add capabilities
-- Addresses edge cases you wouldn't think of—NULL handling, concurrency, race conditions
+- Addresses edge cases you wouldn't think of, like NULL handling, concurrency, race conditions
 - Benchmarks multiple approaches with actual timing results
 
 ## Why This App?
@@ -55,7 +55,7 @@ cargo build --release
 
 ## Features
 
-- Browse questions where Erwin Brandstetter has answered
+- Browse questions that Erwin Brandstetter has answered, with vim-style navigation
 - Fuzzy search on question titles
 - Semantic search using ML embeddings
 - Syntax-highlighted code blocks
