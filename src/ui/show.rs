@@ -9,10 +9,14 @@ use unicode_width::UnicodeWidthStr;
 
 use super::styles;
 use crate::app::App;
+use crate::html::Link;
+
+/// Minimum terminal width required for dual-pane (side-by-side) mode
+pub const DUAL_PANE_MIN_WIDTH: u16 = 160;
 
 pub fn draw_show(frame: &mut Frame, app: &mut App) {
     let size = frame.area();
-    let can_split = size.width >= 160;
+    let can_split = size.width >= DUAL_PANE_MIN_WIDTH;
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -129,6 +133,39 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect, can_split: bool, s
     }
 }
 
+/// Build visible lines with link highlighting applied
+fn build_visible_lines_with_highlights(
+    lines: &[Line<'static>],
+    scroll_offset: usize,
+    visible_rows: usize,
+    focused_link: Option<&Link>,
+    hovered_link: Option<&Link>,
+) -> Vec<Line<'static>> {
+    let focused = focused_link.map(|link| (link.line_index, link.link_num));
+    let hovered = hovered_link.map(|link| (link.line_index, link.link_num));
+
+    lines
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(visible_rows)
+        .map(|(idx, line)| {
+            // Focused takes priority over hovered
+            if let Some((line_idx, link_num)) = focused {
+                if idx == line_idx {
+                    return highlight_link_in_line(line, link_num);
+                }
+            }
+            if let Some((line_idx, link_num)) = hovered {
+                if idx == line_idx {
+                    return highlight_link_in_line(line, link_num);
+                }
+            }
+            line.clone()
+        })
+        .collect()
+}
+
 fn draw_question_pane(frame: &mut Frame, app: &mut App, area: Rect) {
     let visible_rows = area.height as usize;
     let lines = &app.rendered_content;
@@ -141,37 +178,21 @@ fn draw_question_pane(frame: &mut Frame, app: &mut App, area: Rect) {
     let focused_link = if app.left_pane_focused || !app.erwin_pane_visible {
         app.focused_link_index
             .and_then(|idx| app.content_links.get(idx))
-            .map(|link| (link.line_index, link.link_num))
     } else {
         None
     };
 
-    // Get hovered link info for this pane
     let hovered_link = app
         .hovered_link_index
-        .and_then(|idx| app.content_links.get(idx))
-        .map(|link| (link.line_index, link.link_num));
+        .and_then(|idx| app.content_links.get(idx));
 
-    let visible_lines: Vec<Line> = lines
-        .iter()
-        .enumerate()
-        .skip(app.scroll_offset)
-        .take(visible_rows)
-        .map(|(idx, line)| {
-            // Focused takes priority over hovered
-            if let Some((line_idx, link_num)) = focused_link {
-                if idx == line_idx {
-                    return highlight_link_in_line(line, link_num);
-                }
-            }
-            if let Some((line_idx, link_num)) = hovered_link {
-                if idx == line_idx {
-                    return highlight_link_in_line(line, link_num);
-                }
-            }
-            line.clone()
-        })
-        .collect();
+    let visible_lines = build_visible_lines_with_highlights(
+        lines,
+        app.scroll_offset,
+        visible_rows,
+        focused_link,
+        hovered_link,
+    );
 
     let content = Paragraph::new(visible_lines)
         .block(
@@ -196,37 +217,21 @@ fn draw_erwin_pane(frame: &mut Frame, app: &mut App, area: Rect) {
     let focused_link = if !app.left_pane_focused && app.erwin_pane_visible {
         app.focused_link_index
             .and_then(|idx| app.erwin_links.get(idx))
-            .map(|link| (link.line_index, link.link_num))
     } else {
         None
     };
 
-    // Get hovered link info for this pane
     let hovered_link = app
         .hovered_erwin_link_index
-        .and_then(|idx| app.erwin_links.get(idx))
-        .map(|link| (link.line_index, link.link_num));
+        .and_then(|idx| app.erwin_links.get(idx));
 
-    let visible_lines: Vec<Line> = lines
-        .iter()
-        .enumerate()
-        .skip(app.erwin_scroll_offset)
-        .take(visible_rows)
-        .map(|(idx, line)| {
-            // Focused takes priority over hovered
-            if let Some((line_idx, link_num)) = focused_link {
-                if idx == line_idx {
-                    return highlight_link_in_line(line, link_num);
-                }
-            }
-            if let Some((line_idx, link_num)) = hovered_link {
-                if idx == line_idx {
-                    return highlight_link_in_line(line, link_num);
-                }
-            }
-            line.clone()
-        })
-        .collect();
+    let visible_lines = build_visible_lines_with_highlights(
+        lines,
+        app.erwin_scroll_offset,
+        visible_rows,
+        focused_link,
+        hovered_link,
+    );
 
     let content = Paragraph::new(visible_lines)
         .block(

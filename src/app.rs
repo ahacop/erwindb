@@ -7,6 +7,20 @@ use crate::db::{Answer, Comment, Database, Question};
 use crate::html::{is_erwin, Link};
 use crate::search::fuzzy::{fuzzy_filter, FuzzyMatch};
 use crate::search::semantic::SemanticSearch;
+use crate::ui::DUAL_PANE_MIN_WIDTH;
+
+/// Layout constants
+const HEADER_ROWS: usize = 1;
+const STATUS_BAR_ROWS: usize = 1;
+const LEFT_PANE_PADDING: usize = 1;
+const ERWIN_PANE_BORDER: usize = 1;
+
+/// Identifies which pane a position is in
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Pane {
+    Question,
+    Erwin,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortColumn {
@@ -162,7 +176,6 @@ impl App {
     }
 
     pub fn handle_mouse(&mut self, mouse: MouseEvent) {
-        // Only handle mouse on Show page
         if self.page != Page::Show {
             return;
         }
@@ -170,79 +183,102 @@ impl App {
         let col = mouse.column as usize;
         let row = mouse.row as usize;
 
-        // Content area: row 1 to height-2 (skip header and status bar)
-        if row == 0 || row >= (self.height - 1) as usize {
-            self.hovered_link_index = None;
-            self.hovered_erwin_link_index = None;
+        // Check if position is in content area (skip header and status bar)
+        if !self.is_in_content_area(row) {
+            self.clear_hover_state();
             return;
         }
 
-        let content_row = row - 1; // Subtract header row
-
-        // Determine which pane and get appropriate links/scroll
-        let can_split = self.width >= 160;
-        let split_pos = self.width / 2;
-
-        let is_erwin_pane = self.erwin_pane_visible && can_split && col >= split_pos as usize;
-
-        let (links, scroll_offset, pane_col) = if self.erwin_pane_visible && can_split {
-            if col < split_pos as usize {
-                // Left pane - adjust for padding
-                (
-                    &self.content_links,
-                    self.scroll_offset,
-                    col.saturating_sub(1),
-                )
-            } else {
-                // Right pane - adjust for border
-                (
-                    &self.erwin_links,
-                    self.erwin_scroll_offset,
-                    col.saturating_sub(split_pos as usize + 1),
-                )
-            }
-        } else {
-            // Single pane - adjust for padding
-            (
-                &self.content_links,
-                self.scroll_offset,
-                col.saturating_sub(1),
-            )
-        };
-
-        let line_index = content_row + scroll_offset;
-
-        // Find link at this position
-        let hovered = links.iter().position(|link| {
-            link.line_index == line_index && pane_col >= link.start_col && pane_col < link.end_col
-        });
+        let pane = self.get_pane_at_position(col);
+        let link_index = self.find_link_at_position(pane, col, row);
 
         match mouse.kind {
             MouseEventKind::Moved | MouseEventKind::Down(MouseButton::Left) => {
-                if is_erwin_pane {
-                    self.hovered_erwin_link_index = hovered;
-                    self.hovered_link_index = None;
-                } else {
-                    self.hovered_link_index = hovered;
-                    self.hovered_erwin_link_index = None;
-                }
+                self.update_hover_state(pane, link_index);
             }
             _ => {}
         }
 
-        // Handle click
         if mouse.kind == MouseEventKind::Down(MouseButton::Left) {
-            if let Some(idx) = hovered {
-                if let Some(link) = links.get(idx) {
-                    // If it's a local SO question, navigate to it
-                    if let Some(qid) = link.question_id {
-                        if self.questions.iter().any(|q| q.id == qid) {
-                            self.navigate_to_question(qid);
-                            return;
-                        }
-                    }
-                    let _ = open::that(&link.url);
+            if let Some(idx) = link_index {
+                self.handle_link_click(pane, idx);
+            }
+        }
+    }
+
+    fn is_in_content_area(&self, row: usize) -> bool {
+        row >= HEADER_ROWS && row < (self.height as usize).saturating_sub(STATUS_BAR_ROWS)
+    }
+
+    fn get_pane_at_position(&self, col: usize) -> Pane {
+        let can_split = self.width >= DUAL_PANE_MIN_WIDTH;
+        let split_pos = (self.width / 2) as usize;
+
+        if self.erwin_pane_visible && can_split && col >= split_pos {
+            Pane::Erwin
+        } else {
+            Pane::Question
+        }
+    }
+
+    fn find_link_at_position(&self, pane: Pane, col: usize, row: usize) -> Option<usize> {
+        let can_split = self.width >= DUAL_PANE_MIN_WIDTH;
+        let split_pos = (self.width / 2) as usize;
+
+        let (links, scroll_offset, pane_col) = match pane {
+            Pane::Question => {
+                let adj_col = col.saturating_sub(LEFT_PANE_PADDING);
+                (&self.content_links, self.scroll_offset, adj_col)
+            }
+            Pane::Erwin if can_split => {
+                let adj_col = col.saturating_sub(split_pos + ERWIN_PANE_BORDER);
+                (&self.erwin_links, self.erwin_scroll_offset, adj_col)
+            }
+            Pane::Erwin => (&self.content_links, self.scroll_offset, col),
+        };
+
+        let content_row = row - HEADER_ROWS;
+        let line_index = content_row + scroll_offset;
+
+        links.iter().position(|link| {
+            link.line_index == line_index && pane_col >= link.start_col && pane_col < link.end_col
+        })
+    }
+
+    fn clear_hover_state(&mut self) {
+        self.hovered_link_index = None;
+        self.hovered_erwin_link_index = None;
+    }
+
+    fn update_hover_state(&mut self, pane: Pane, link_index: Option<usize>) {
+        match pane {
+            Pane::Erwin => {
+                self.hovered_erwin_link_index = link_index;
+                self.hovered_link_index = None;
+            }
+            Pane::Question => {
+                self.hovered_link_index = link_index;
+                self.hovered_erwin_link_index = None;
+            }
+        }
+    }
+
+    fn handle_link_click(&mut self, pane: Pane, link_index: usize) {
+        let link = match pane {
+            Pane::Erwin => self.erwin_links.get(link_index),
+            Pane::Question => self.content_links.get(link_index),
+        };
+
+        if let Some(link) = link {
+            // If it's a local SO question, navigate to it
+            if let Some(qid) = link.question_id {
+                if self.questions.iter().any(|q| q.id == qid) {
+                    self.navigate_to_question(qid);
+                    return;
                 }
+            }
+            if let Err(e) = open::that(&link.url) {
+                eprintln!("Failed to open URL {}: {}", link.url, e);
             }
         }
     }
@@ -487,7 +523,7 @@ impl App {
                 self.focused_link_index = None;
                 let erwin_count = self.erwin_answer_count();
                 if erwin_count > 0 {
-                    if self.width >= 160 {
+                    if self.width >= DUAL_PANE_MIN_WIDTH {
                         // Wide terminal: toggle/cycle Erwin pane
                         if !self.erwin_pane_visible {
                             self.erwin_pane_visible = true;
@@ -521,7 +557,7 @@ impl App {
                 self.focused_link_index = None;
                 let erwin_count = self.erwin_answer_count();
                 if erwin_count > 0 {
-                    if self.width >= 160 && self.erwin_pane_visible {
+                    if self.width >= DUAL_PANE_MIN_WIDTH && self.erwin_pane_visible {
                         if !self.left_pane_focused && self.erwin_answer_index == 0 {
                             self.left_pane_focused = true;
                         } else if !self.left_pane_focused {
@@ -680,7 +716,7 @@ impl App {
 
     fn rebuild_content(&mut self) {
         if let Some(ref question) = self.current_question {
-            let hide_erwin = self.erwin_pane_visible && self.width >= 160;
+            let hide_erwin = self.erwin_pane_visible && self.width >= DUAL_PANE_MIN_WIDTH;
             let content = build_question_content(
                 question,
                 &self.current_answers,

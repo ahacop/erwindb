@@ -2,6 +2,8 @@ mod index;
 mod show;
 pub mod styles;
 
+pub use show::DUAL_PANE_MIN_WIDTH;
+
 use ratatui::Frame;
 
 use crate::app::{App, Page};
