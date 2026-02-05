@@ -20,7 +20,7 @@
         {
           default = pkgs.rustPlatform.buildRustPackage {
             pname = "erwindb";
-            version = "0.9.10";
+            version = "0.9.11";
             src = ./.;
             cargoLock.lockFile = ./Cargo.lock;
 

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-02-05
+
 ### Added
 
 - Mouse support for link hover highlighting and click to open links
@@ -121,7 +123,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard navigation with vim-style bindings
 - Link highlighting and opening in browser
 
-[Unreleased]: https://github.com/ahacop/erwindb/compare/v0.9.10...HEAD
+[Unreleased]: https://github.com/ahacop/erwindb/compare/v0.9.11...HEAD
+[0.9.11]: https://github.com/ahacop/erwindb/compare/v0.9.10...v0.9.11
 [0.9.10]: https://github.com/ahacop/erwindb/compare/v0.9.9...v0.9.10
 [0.9.9]: https://github.com/ahacop/erwindb/compare/v0.9.8...v0.9.9
 [0.9.8]: https://github.com/ahacop/erwindb/compare/v0.9.7...v0.9.8
