@@ -63,6 +63,9 @@ fn run_app(
             event::Event::Key(key) => {
                 app.handle_key(key);
             }
+            event::Event::Mouse(mouse) => {
+                app.handle_mouse(mouse);
+            }
             event::Event::Resize(width, height) => {
                 app.handle_resize(width, height);
             }

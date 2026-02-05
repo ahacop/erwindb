@@ -1,10 +1,11 @@
 use anyhow::Result;
-use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, KeyEventKind, MouseEvent};
 use std::time::Duration;
 
 pub enum Event {
     Tick,
     Key(KeyEvent),
+    Mouse(MouseEvent),
     Resize(u16, u16),
 }
 
@@ -27,6 +28,7 @@ impl EventHandler {
         }
 
         let mut last_key: Option<KeyEvent> = None;
+        let mut last_mouse: Option<MouseEvent> = None;
         let mut last_resize: Option<(u16, u16)> = None;
 
         // Read all pending events, keeping only the last of each type
@@ -37,6 +39,9 @@ impl EventHandler {
                     if key.kind != KeyEventKind::Release {
                         last_key = Some(key);
                     }
+                }
+                CrosstermEvent::Mouse(mouse) => {
+                    last_mouse = Some(mouse);
                 }
                 CrosstermEvent::Resize(w, h) => {
                     last_resize = Some((w, h));
@@ -50,12 +55,15 @@ impl EventHandler {
             }
         }
 
-        // Prioritize resize events, then key events
+        // Prioritize resize events, then key events, then mouse events
         if let Some((w, h)) = last_resize {
             return Ok(Event::Resize(w, h));
         }
         if let Some(key) = last_key {
             return Ok(Event::Key(key));
+        }
+        if let Some(mouse) = last_mouse {
+            return Ok(Event::Mouse(mouse));
         }
 
         Ok(Event::Tick)

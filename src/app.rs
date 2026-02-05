@@ -1,5 +1,5 @@
 use anyhow::Result;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::text::Line;
 
 use crate::content::{build_erwin_content, build_question_content};
@@ -71,6 +71,8 @@ pub struct App {
     pub left_pane_focused: bool,
     pub erwin_scroll_offset: usize,
     pub focused_link_index: Option<usize>,
+    pub hovered_link_index: Option<usize>, // For content_links (left/single pane)
+    pub hovered_erwin_link_index: Option<usize>, // For erwin_links (right pane)
 
     // Pre-rendered content (rebuilt when question or width changes)
     pub rendered_content: Vec<Line<'static>>,
@@ -127,6 +129,8 @@ impl App {
             left_pane_focused: true,
             erwin_scroll_offset: 0,
             focused_link_index: None,
+            hovered_link_index: None,
+            hovered_erwin_link_index: None,
 
             rendered_content: Vec::new(),
             rendered_erwin_content: Vec::new(),
@@ -154,6 +158,92 @@ impl App {
         match self.page {
             Page::Index => self.handle_index_key(key),
             Page::Show => self.handle_show_key(key),
+        }
+    }
+
+    pub fn handle_mouse(&mut self, mouse: MouseEvent) {
+        // Only handle mouse on Show page
+        if self.page != Page::Show {
+            return;
+        }
+
+        let col = mouse.column as usize;
+        let row = mouse.row as usize;
+
+        // Content area: row 1 to height-2 (skip header and status bar)
+        if row == 0 || row >= (self.height - 1) as usize {
+            self.hovered_link_index = None;
+            self.hovered_erwin_link_index = None;
+            return;
+        }
+
+        let content_row = row - 1; // Subtract header row
+
+        // Determine which pane and get appropriate links/scroll
+        let can_split = self.width >= 160;
+        let split_pos = self.width / 2;
+
+        let is_erwin_pane = self.erwin_pane_visible && can_split && col >= split_pos as usize;
+
+        let (links, scroll_offset, pane_col) = if self.erwin_pane_visible && can_split {
+            if col < split_pos as usize {
+                // Left pane - adjust for padding
+                (
+                    &self.content_links,
+                    self.scroll_offset,
+                    col.saturating_sub(1),
+                )
+            } else {
+                // Right pane - adjust for border
+                (
+                    &self.erwin_links,
+                    self.erwin_scroll_offset,
+                    col.saturating_sub(split_pos as usize + 1),
+                )
+            }
+        } else {
+            // Single pane - adjust for padding
+            (
+                &self.content_links,
+                self.scroll_offset,
+                col.saturating_sub(1),
+            )
+        };
+
+        let line_index = content_row + scroll_offset;
+
+        // Find link at this position
+        let hovered = links.iter().position(|link| {
+            link.line_index == line_index && pane_col >= link.start_col && pane_col < link.end_col
+        });
+
+        match mouse.kind {
+            MouseEventKind::Moved | MouseEventKind::Down(MouseButton::Left) => {
+                if is_erwin_pane {
+                    self.hovered_erwin_link_index = hovered;
+                    self.hovered_link_index = None;
+                } else {
+                    self.hovered_link_index = hovered;
+                    self.hovered_erwin_link_index = None;
+                }
+            }
+            _ => {}
+        }
+
+        // Handle click
+        if mouse.kind == MouseEventKind::Down(MouseButton::Left) {
+            if let Some(idx) = hovered {
+                if let Some(link) = links.get(idx) {
+                    // If it's a local SO question, navigate to it
+                    if let Some(qid) = link.question_id {
+                        if self.questions.iter().any(|q| q.id == qid) {
+                            self.navigate_to_question(qid);
+                            return;
+                        }
+                    }
+                    let _ = open::that(&link.url);
+                }
+            }
         }
     }
 

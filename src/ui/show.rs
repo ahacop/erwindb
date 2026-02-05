@@ -146,13 +146,25 @@ fn draw_question_pane(frame: &mut Frame, app: &mut App, area: Rect) {
         None
     };
 
+    // Get hovered link info for this pane
+    let hovered_link = app
+        .hovered_link_index
+        .and_then(|idx| app.content_links.get(idx))
+        .map(|link| (link.line_index, link.link_num));
+
     let visible_lines: Vec<Line> = lines
         .iter()
         .enumerate()
         .skip(app.scroll_offset)
         .take(visible_rows)
         .map(|(idx, line)| {
+            // Focused takes priority over hovered
             if let Some((line_idx, link_num)) = focused_link {
+                if idx == line_idx {
+                    return highlight_link_in_line(line, link_num);
+                }
+            }
+            if let Some((line_idx, link_num)) = hovered_link {
                 if idx == line_idx {
                     return highlight_link_in_line(line, link_num);
                 }
@@ -189,13 +201,25 @@ fn draw_erwin_pane(frame: &mut Frame, app: &mut App, area: Rect) {
         None
     };
 
+    // Get hovered link info for this pane
+    let hovered_link = app
+        .hovered_erwin_link_index
+        .and_then(|idx| app.erwin_links.get(idx))
+        .map(|link| (link.line_index, link.link_num));
+
     let visible_lines: Vec<Line> = lines
         .iter()
         .enumerate()
         .skip(app.erwin_scroll_offset)
         .take(visible_rows)
         .map(|(idx, line)| {
+            // Focused takes priority over hovered
             if let Some((line_idx, link_num)) = focused_link {
+                if idx == line_idx {
+                    return highlight_link_in_line(line, link_num);
+                }
+            }
+            if let Some((line_idx, link_num)) = hovered_link {
                 if idx == line_idx {
                     return highlight_link_in_line(line, link_num);
                 }

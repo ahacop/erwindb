@@ -28,6 +28,8 @@ pub struct Link {
     pub line_index: usize,
     pub link_num: usize, // The [n] reference number
     pub question_id: Option<i64>,
+    pub start_col: usize, // Column where link starts
+    pub end_col: usize,   // Column where link ends
 }
 
 #[derive(Debug, Clone)]
@@ -104,11 +106,19 @@ pub fn html_to_content(html: &str, width: usize) -> ParsedContent {
                     if let Ok(link_num) = num_match.as_str().parse::<usize>() {
                         if link_num > 0 && link_num <= link_map.len() {
                             let (_, url) = &link_map[link_num - 1];
+                            let full_match = cap.get(0).unwrap();
+                            // Calculate column positions using unicode width
+                            let start_col =
+                                unicode_width::UnicodeWidthStr::width(&line[..full_match.start()]);
+                            let end_col = start_col
+                                + unicode_width::UnicodeWidthStr::width(full_match.as_str());
                             all_links.push(Link {
                                 url: url.clone(),
                                 line_index,
                                 link_num,
                                 question_id: extract_so_question_id(url),
+                                start_col,
+                                end_col,
                             });
                         }
                     }
