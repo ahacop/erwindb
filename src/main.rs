@@ -20,6 +20,11 @@ use app::App;
 use event::EventHandler;
 
 fn main() -> Result<()> {
+    if std::env::args().any(|a| a == "--version" || a == "-V") {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
+
     // Create app first (downloads models with progress bars visible)
     let mut app = App::new()?;
     let events = EventHandler::new(16); // ~60fps for responsive scrolling
