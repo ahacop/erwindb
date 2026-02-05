@@ -16,3 +16,5 @@ publish-jobs = ["homebrew"]
 # Homebrew tap
 tap = "ahacop/homebrew-tap"
 formula = "erwindb"
+# Use CHANGELOG.md for release notes
+changelog = "CHANGELOG.md"
